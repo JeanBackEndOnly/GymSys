@@ -14,7 +14,6 @@ class Payment extends Model
     protected $fillable = [
         'membership_id',
         'user_id',
-        'contract_status',
         'payment_type',
         'payment_amount',
         'or_number',
