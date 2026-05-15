@@ -52,7 +52,7 @@ class UserCreateRequest extends FormRequest
                     ->symbols(),
             ],
             'status'     => ['nullable', 'string', 'in:active,inactive'],
-            'role'       => ['nullable', 'string', 'in:member,admin,cashier,staff'],
+            // 'role'       => ['nullable', 'string', 'in:member,admin,cashier,staff'],
         ];
     }
 }

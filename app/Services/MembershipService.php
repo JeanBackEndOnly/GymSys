@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Membership;
+use App\Http\Requests\Admin\MembershipUpdateRequest;
+use App\Http\Resources\MembershipResource;
 use Illuminate\Support\Facades\DB;
 
 class MembershipService
@@ -30,5 +32,25 @@ class MembershipService
 
             return $membership->load('payment', 'user');
         });
+    }
+    public function update(MembershipUpdateRequest $request, Membership $membership)
+    {
+        try {
+            $this->authorize('update', $membership);
+
+            $membership->update($request->validated());
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Membership updated successfully.',
+                'data' => new MembershipResource($membership->fresh()),
+            ], 200);
+        } catch (\Throwable $e) {
+            \Log::error('Membership update failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 0,
+                'message' => 'Membership update failed. Please try again.',
+            ], 500);
+        }
     }
 }

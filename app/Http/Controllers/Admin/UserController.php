@@ -174,4 +174,28 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    public function updateRole(Request $request, User $user)
+    {
+        $this->authorize('updateRole', $user);
+
+        $request->validate([
+            'role' => ['required', 'string', 'in:member,admin,cashier,staff'],
+        ]);
+
+        // Prevent self-demotion (admin can't remove their own admin role)
+        if (auth('sanctum')->id() === $user->id) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'You cannot change your own role.',
+            ], 403);
+        }
+
+        $user->update(['role' => $request->role]);
+
+        return response()->json([
+            'status' => 1,
+            'message' => 'Role updated successfully.',
+        ]);
+    }
 }

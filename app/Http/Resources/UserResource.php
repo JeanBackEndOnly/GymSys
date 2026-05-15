@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Gate;
 
 class UserResource extends JsonResource
 {
@@ -19,8 +20,8 @@ class UserResource extends JsonResource
             'joined'    => $this->created_at->format('M d, Y'),
         ];
 
-        // Add detail fields only for single user requests
-        if ($request->routeIs('users.show') || $request->isMethod('post')) {
+        // Only include PII if authorized via Gate policy
+        if (Gate::allows('viewSensitive', $this->resource)) {
             $data = array_merge($data, [
                 'firstname'  => $this->firstname,
                 'middlename' => $this->middlename,
@@ -33,9 +34,8 @@ class UserResource extends JsonResource
                 'sex'        => $this->sex,
                 'height'     => $this->height,
                 'weight'     => $this->weight,
-                'qr_code'    => $this->qr_code ? asset('storage/' . $this->qr_code) : null,
                 'profile'    => $this->profile ? asset('storage/' . $this->profile) : null,
-                'icon'       => $this->icon ? asset('storage/' . $this->icon) : null,
+                'qr_code'    => $this->qr_code ? asset('storage/' . $this->qr_code) : null,
             ]);
         }
 

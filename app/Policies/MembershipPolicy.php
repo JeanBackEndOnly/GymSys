@@ -8,59 +8,49 @@ use Illuminate\Auth\Access\Response;
 
 class MembershipPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
         return in_array($user->role, ['admin', 'cashier']);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Membership $membership): bool
     {
-        return in_array($user->role, ['admin', 'cashier']) 
-            || $user->id === $membership->user_id;
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $user->id === $membership->user_id;
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['admin', 'cashier']);
+        // Admin can do anything
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        // Cashier can create memberships, but only for regular members
+        if ($user->role === 'cashier') {
+            $targetUser = User::find(request('user_id'));
+            
+            // Can't create memberships for admins or other cashiers
+            return $targetUser && in_array($targetUser->role, ['member']);
+        }
+
+        return false;
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, Membership $membership): bool
     {
-        return in_array($user->role, ['admin', 'cashier']);
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        // Cashier can only update their own memberships
+        return $user->role === 'cashier' && $user->id === $membership->user_id;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Membership $membership): bool
-    {
-        return in_array($user->role, ['admin', 'cashier']);
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Membership $membership): bool
-    {
-        return in_array($user->role, ['admin', 'cashier']);
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Membership $membership): bool
     {
         return $user->role === 'admin';
     }
