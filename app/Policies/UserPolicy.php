@@ -45,18 +45,4 @@ class UserPolicy
     {
         return $user->role === 'admin' && $user->id !== $model->id;
     }
-
-    /**
-     * Determine whether the user can view sensitive PII fields.
-     */
-    // public function viewSensitive(User $user, User $model): bool
-    // {
-    //     // Admin can view all PII
-    //     if ($user->role === 'admin') {
-    //         return true;
-    //     }
-
-    //     // User can view their own PII
-    //     return $user->id === $model->id;
-    // }
 }
