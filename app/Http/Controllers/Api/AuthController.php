@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Auth\ChangePasswordRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -26,7 +27,7 @@ class AuthController extends Controller
                 'status' => 'success',
                 'message' => 'Registered Successfully.',
                 'data' => [
-                    'user' => $user,
+                    'user' => new UserResource($user),
                     'token' => $token,
                 ],
             ], 201);
@@ -52,7 +53,8 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
+            // Delete ALL old tokens (no currentAccessToken check needed)
+            $user->tokens()->delete();
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -60,7 +62,7 @@ class AuthController extends Controller
                 'status' => 'success',
                 'message' => 'Logged in successfully.',
                 'data' => [
-                    'user' => $user,
+                    'user' => new UserResource($user),
                     'token' => $token,
                 ],
             ], 200);
