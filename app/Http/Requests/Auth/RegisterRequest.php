@@ -22,6 +22,8 @@ class RegisterRequest extends FormRequest
             'suffix' => 'nullable|string|in:jr,II,III,IV,V,VI',
             'username' => 'required|string|unique:users,username|max:255',
             'email' => 'required|string|email|unique:users,email|max:255', 
+            'profile'    => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'qr_code'    => ['nullable', 'string'],
             'password' => [
                 'required',
                 'string',
