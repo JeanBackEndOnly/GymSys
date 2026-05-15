@@ -198,4 +198,16 @@ class UserController extends Controller
             'message' => 'Role updated successfully.',
         ]);
     }
+
+    public function approveUser(User $user)
+    {
+        $this->authorize('update', $user);
+
+        $user->update(['status' => 'active']);
+
+        return response()->json([
+            'status' => 1,
+            'message' => $user->firstname . ' approved successfully.',
+        ]);
+    }
 }
