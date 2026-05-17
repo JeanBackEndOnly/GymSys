@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // to update user membership status
         Schema::create('membership_payment', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
