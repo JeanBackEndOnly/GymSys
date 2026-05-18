@@ -65,7 +65,7 @@ class ContractController extends Controller
         try {
             $this->authorize('create', Contract::class);
 
-            $contract = $this->ContractService->create($request->validated());
+            $contract = $this->contractService->create($request->validated());
 
             return response()->json([
                 'status' => 1,
@@ -80,6 +80,7 @@ class ContractController extends Controller
             ], 500);
         }
     }
+
 
     public function show(Contract $contract)
     {

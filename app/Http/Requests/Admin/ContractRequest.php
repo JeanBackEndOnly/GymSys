@@ -19,7 +19,7 @@ class ContractRequest extends FormRequest
     {
         return [
             'user_id'          => ['required', 'exists:users,id'],
-            'membership_type' => ['required', 'string', 'in:1_month,3_months,6_months,1_year'],
+            'contract_type' => ['required', 'string', 'in:1_month,3_months,6_months,1_year'],
             'start_date'       => ['required', 'date'],
             'end_date'         => ['required', 'date', 'after:start_date'],
             'status'           => ['nullable', 'string', 'in:active,inactive,expired'],

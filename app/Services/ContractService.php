@@ -14,7 +14,7 @@ class ContractService
         return DB::transaction(function () use ($data) {
             $contract = Contract::create([
                 'user_id' => $data['user_id'],
-                'contract_type' => $data['contract_type'] ?? $data['membership_type'],
+                'contract_type' => $data['contract_type'],
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
                 'status' => $data['status'] ?? 'active',
@@ -27,8 +27,7 @@ class ContractService
                 'payment_amount'   => $data['payment_amount'],
                 'or_number'        => $data['or_number'] ?? null,
                 'transaction_id'   => $data['transaction_id'] ?? null,
-                'payment_status'   => $data['payment_status'] ?? 'pending',
-                'contract_status'  => $data['contract_status'] ?? 'active',
+                'payment_status'   => $data['payment_status'] ?? 'pending'
             ]);
 
             return $contract->load('payment', 'user');

@@ -23,7 +23,7 @@ class ContractUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'membership_type' => ['sometimes', 'string', 'in:1_month,3_months,6_months,1_year'],
+            'contract_type' => ['sometimes', 'string', 'in:1_month,3_months,6_months,1_year'],
             'start_date'      => ['sometimes', 'date'],
             'end_date'        => ['sometimes', 'date', 'after:start_date'],
             'status'          => ['sometimes', 'string', 'in:active,inactive,expired'],
