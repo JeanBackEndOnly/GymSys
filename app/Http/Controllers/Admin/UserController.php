@@ -17,27 +17,28 @@ class UserController extends Controller
 {
     use AuthorizesRequests;
 
+    public function __construct(
+        private \App\Services\RegisterService $registerService
+    ) {}
+
     public function store(UserCreateRequest $request)
     {
         try {
             $this->authorize('create', User::class);
-
             $validated = $request->validated();
-            $validated["password"] = Hash::make($request->password);
-            $validated["profile"] = $request->hasFile('profile')
-                ? $request->file('profile')->store('profiles', 'public')
-                : null;
-
-            $validated["icon"] = $request->hasFile('icon')
-                ? $request->file('icon')->store('icons', 'public')
-                : null;
-
-            $user = User::create($validated);
-
+            
+            $result = $this->registerService->register(
+                $validated, 
+                $request->hasFile('profile') ? $request->file('profile') : null
+            );
+            
             return response()->json([
-                'status' => 1,
-                'message' => 'Member registered successfully.',
-                'data' => new UserResource($user),
+                'status' => 'success',
+                'message' => 'Registered Successfully.',
+                'data' => [
+                    'user' => new UserResource($result['user']),
+                    'token' => $result['token'],
+                ],
             ], 201);
         } catch (\Throwable $e) {
             Log::error('User creation failed: ' . $e->getMessage());

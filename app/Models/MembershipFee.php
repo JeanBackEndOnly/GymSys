@@ -13,8 +13,9 @@ class MembershipFee extends Model
     protected $fillable = [
         'user_id',
         'payment_amount',
+        'payment_type',
         'or_number',
-        'payment_status',
+        'transaction_id',
         'paid_at'
     ];
     

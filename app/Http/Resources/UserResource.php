@@ -39,6 +39,22 @@ class UserResource extends JsonResource
             ]);
         }
 
+        // Add membership fee information (always include basic info)
+        if ($this->relationLoaded('membership_fee') && $this->membership_fee) {
+            $data['membership_fee'] = [
+                'id'              => $this->membership_fee->id,
+                'payment_amount'  => $this->membership_fee->payment_amount,
+                'payment_type'    => $this->membership_fee->payment_type,
+                'payment_status'  => $this->membership_fee->payment_status,
+                'or_number'       => $this->membership_fee->or_number,
+                'transaction_id'  => $this->membership_fee->transaction_id,
+                'paid_at'         => $this->membership_fee->paid_at?->format('M d, Y'),
+                'created_at'      => $this->membership_fee->created_at?->format('M d, Y'),
+            ];
+        } else {
+            $data['membership_fee'] = null;
+        }
+
         return $data;
     }
 }

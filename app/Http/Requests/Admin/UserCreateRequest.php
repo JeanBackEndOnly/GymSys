@@ -34,15 +34,11 @@ class UserCreateRequest extends FormRequest
             'contact'    => ['nullable', 'string', 'max:255'],
             'address'    => ['nullable', 'string'],
             'birthday'   => ['nullable', 'date'],
-            'birthplace' => ['nullable', 'string', 'max:255'],
             'qr_code'    => ['nullable', 'string'],
             'sex'        => ['nullable', 'string', 'in:male,female'],
-            'height'     => ['nullable', 'numeric', 'min:0'],
-            'weight'     => ['nullable', 'numeric', 'min:0'],
             'email'      => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'username'      => ['required', 'string', 'max:255', 'unique:users,username'],
             'profile'    => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'icon'       => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:1024'],
             'password'   => [
                 'required',
                 'string',
@@ -51,8 +47,10 @@ class UserCreateRequest extends FormRequest
                     ->mixedCase()
                     ->symbols(),
             ],
-            'status'     => ['nullable', 'string', 'in:active,inactive'],
-            // 'role'       => ['nullable', 'string', 'in:member,admin,cashier,staff'],
+            'payment_amount' => 'required|numeric|min:0',
+            'or_number'        => ['required', 'string', 'max:255'], 
+            'transaction_id'   => ['nullable', 'string', 'max:255'], 
+            'payment_type'   => ['required', 'string', 'in:cash,gcash'],
         ];
     }
 }

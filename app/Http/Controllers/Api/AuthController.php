@@ -11,27 +11,35 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\RegisterService;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private \App\Services\RegisterService $registerService
+    ) {}
+
     public function register(RegisterRequest $request)
+
     {
         try {
             $validated = $request->validated();
-            $validated["password"] = Hash::make($validated["password"]);
-
-            $user = User::create($validated);
-            $token = $user->createToken('auth_token')->plainTextToken;
-
+            
+            $result = $this->registerService->register(
+                $validated, 
+                $request->hasFile('profile') ? $request->file('profile') : null
+            );
+            
             return response()->json([
                 'status' => 'success',
                 'message' => 'Registered Successfully.',
                 'data' => [
-                    'user' => new UserResource($user),
-                    'token' => $token,
+                    'user' => new UserResource($result['user']),
+                    'token' => $result['token'],
                 ],
             ], 201);
-        } catch (\Throwable  $e) {
+            
+        } catch (\Throwable $e) {
             Log::error('Register failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
@@ -42,8 +50,8 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         try {
-            $user = User::where('email', $request->email)
-                ->orWhere('username', $request->email)
+            $user = User::where('email', $request->login)
+                ->orWhere('username', $request->login)
                 ->first();
 
             if (!$user || !Hash::check($request->password, $user->password)) {

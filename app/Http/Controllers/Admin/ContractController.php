@@ -36,8 +36,8 @@ class ContractController extends Controller
                 ->when($request->status, function ($query) use ($request) {
                     $query->where('status', $request->status);
                 })
-                ->when($request->Contract_type, function ($query) use ($request) {
-                    $query->where('Contract_type', $request->Contract_type);
+                ->when($request->contract_type, function ($query) use ($request) {
+                    $query->where('contract_type', $request->contract_type);
                 })
                 ->latest()
                 ->paginate($request->per_page ?? 15);
@@ -59,14 +59,13 @@ class ContractController extends Controller
             ], 500);
         }
     }
-
     public function store(ContractRequest $request)
     {
         try {
             $this->authorize('create', Contract::class);
 
             $contract = $this->contractService->create($request->validated());
-
+            
             return response()->json([
                 'status' => 1,
                 'message' => 'Contract created successfully.',
@@ -107,6 +106,18 @@ class ContractController extends Controller
             $this->authorize('update', $contract);
 
             $contract->update($request->validated());
+
+            $paymentData = $request->only([
+                'payment_status',
+                'payment_amount',
+                'payment_type',
+                'or_number',
+                'transaction_id'
+            ]);
+            
+            if (!empty($paymentData) && $contract->payment) {
+                $contract->payment()->update($paymentData);
+            }
 
             return response()->json([
                 'status' => 1,

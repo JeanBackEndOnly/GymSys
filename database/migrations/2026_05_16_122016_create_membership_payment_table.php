@@ -15,11 +15,12 @@ return new class extends Migration
         Schema::create('membership_fee', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('payment_type')->nullable();
+            $table->enum('payment_type', ['cash', 'gcash']);
             $table->decimal('payment_amount', 10, 2)->nullable();
             $table->string('or_number')->nullable();
             $table->string('transaction_id')->nullable();
-            $table->string('payment_status')->nullable();
+            $table->enum('payment_status', ['pending', 'paid', 'failed'])->default('pending');
+            $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });
     }

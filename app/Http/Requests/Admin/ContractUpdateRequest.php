@@ -20,14 +20,21 @@ class ContractUpdateRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+   public function rules(): array
     {
         return [
+            // Contract fields
             'contract_type' => ['sometimes', 'string', 'in:1_month,3_months,6_months,1_year'],
-            'start_date'      => ['sometimes', 'date'],
-            'end_date'        => ['sometimes', 'date', 'after:start_date'],
-            'status'          => ['sometimes', 'string', 'in:active,inactive,expired'],
+            'start_date'    => ['sometimes', 'date'],
+            'end_date'      => ['sometimes', 'date', 'after:start_date'],
+            'status'        => ['sometimes', 'string', 'in:active,inactive,expired'],
+            
+            // Payment fields
             'payment_status'  => ['sometimes', 'string', 'in:pending,paid,failed'],
+            'payment_amount'  => ['sometimes', 'numeric', 'min:0'],
+            'payment_type'    => ['sometimes', 'string', 'in:cash,gcash'],
+            'or_number'       => ['nullable', 'string', 'max:255'],
+            'transaction_id'  => ['nullable', 'string', 'max:255'],
         ];
     }
 }
