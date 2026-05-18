@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\MembershipController;
+use App\Http\Controllers\Admin\ContractController;
 
 // ── Public Routes ──────────────────────────────
 Route::post('/register', [AuthController::class, 'register'])
@@ -29,6 +29,6 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->group(function ()
     Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
     Route::patch('/users/{user}/approve', [UserController::class, 'approveUser']);
     
-    // Membership Management
-    Route::apiResource('memberships', MembershipController::class);
+    // Contract Management
+    Route::apiResource('contracts', ContractController::class);
 });

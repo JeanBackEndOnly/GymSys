@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Membership_fee;
+use App\Models\Contract;
 
 #[Fillable(['firstname',
         'middlename',
@@ -51,5 +54,11 @@ class User extends Authenticatable
     }
     public function isCashier(): bool{
         return $this->role === 'cashier';
+    }
+    public function memberhsip_fee(): HasOne{
+        return $this->hasOne(Membership_fee::class);
+    }
+    public function contract(): HasOne{
+        return $this->hasOne(Contract::class);
     }
 }

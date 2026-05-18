@@ -4,30 +4,28 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
-use App\Models\Contract;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Payment extends Model
+class MembershipFee extends Model
 {
-    protected $table = 'contract_payment';
-
+    protected $table = 'membership_fee';
+    
     protected $fillable = [
-        'contract_id',
         'user_id',
-        'payment_type',
         'payment_amount',
         'or_number',
-        'transaction_id',
         'payment_status',
+        'paid_at'
     ];
-
+    
+    protected $casts = [
+        'payment_amount' => 'decimal:2',
+        'paid_at' => 'datetime',
+        'created_at' => 'datetime'
+    ];
+    
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function contract(): BelongsTo
-    {
-        return $this->belongsTo(Contract::class);
     }
 }

@@ -8,16 +8,16 @@ use App\Models\Payment;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Membership extends Model
+class Contract extends Model
 {
     protected $fillable = [
         'user_id',
-        'membership_type',
+        'contract_type',
         'start_date',
         'end_date',
         'status'
     ];
-    protected $table = 'membership';
+    protected $table = 'contract';
     
     public function user(): BelongsTo
     {

@@ -2,17 +2,21 @@
 
 namespace App\Policies;
 
-use App\Models\Membership;
+use App\Models\Contract;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class MembershipPolicy
+class ContractPolicy
 {
-    public function view(User $user, Membership $membership): bool
+    public function view(User $user, Contract $contract): bool
     {
-        return in_array($user->role, ['admin', 'cashier']);
-        return $user->id === $membership->user_id;
+        if (in_array($user->role, ['admin', 'cashier'])) {
+            return true;
+        }
+
+        return $user->id === $contract->user_id;
     }
+
 
     public function viewAny(User $user): bool
     {
@@ -33,12 +37,12 @@ class MembershipPolicy
         return false;
     }
 
-    public function update(User $user, Membership $membership): bool
+    public function update(User $user, Contract $contract): bool
     {
         return in_array($user->role, ['admin', 'cashier']);
     }
 
-    public function delete(User $user, Membership $membership): bool
+    public function delete(User $user, Contract $contract): bool
     {
         return $user->role === 'admin';
     }
