@@ -22,7 +22,6 @@ return new class extends Migration
             $table->string('birthday')->nullable();
             $table->string('birthplace')->nullable();
             $table->text('qr_code')->nullable();
-            $table->enum('membership_status', ['Active', 'Inactive'])->default('inactive');
             $table->enum('sex', ['male', 'female'])->nullable();
             $table->decimal('height', 5, 2)->nullable();
             $table->decimal('weight', 5, 2)->nullable();
