@@ -46,7 +46,7 @@ class ContractService
                 'data' => new ContractResource($contract->fresh()),
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('Failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Contract update failed. Please try again.',

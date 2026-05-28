@@ -18,6 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+
+        $middleware->alias([
+            'active' => \App\Http\Middleware\CheckActiveStatusMiddleware::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

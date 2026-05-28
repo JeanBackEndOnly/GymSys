@@ -35,7 +35,7 @@ class AuthController extends Controller
                 'message' => 'Registered Successfully.',
                 'data' => [
                     'user' => new UserResource($result['user']),
-                    'token' => $result['token'],
+                    'token' => null,
                 ],
             ], 201);
             
@@ -62,7 +62,10 @@ class AuthController extends Controller
             }
 
             if ($user->status !== 'active') {
-                return response()->json(['message' => 'Account pending approval'], 403);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid credentials. Please try again.',
+                ], 401);
             }
 
             // Delete ALL old tokens (no currentAccessToken check needed)

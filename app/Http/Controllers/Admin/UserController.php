@@ -40,7 +40,7 @@ class UserController extends Controller
                 ],
             ], 201);
         } catch (\Throwable $e) {
-           \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+           \Log::error('Failed' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Creating user failed. Please try again.',
@@ -72,13 +72,17 @@ class UserController extends Controller
 
             $user->update($validated);
 
+            if ($user->wasChanged('status') && $user->status !== 'active') {
+                $user->tokens()->delete();
+            }
+
             return response()->json([
                 'status' => 1,
                 'message' => $user->firstname . ' updated successfully.',
                 'data' => new UserResource($user->fresh()),
             ], 200);
         } catch (\Throwable $e) {
-           \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+           \Log::error('Failed' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Update user failed. Please try again.',
@@ -138,7 +142,7 @@ class UserController extends Controller
                 'data' => $users,
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('Failed' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch user data. Please try again.',
@@ -167,7 +171,7 @@ class UserController extends Controller
                 'message' => 'User ' . $name . ' deleted successfully.',
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('Failed' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to delete user. Please try again.',

@@ -15,7 +15,7 @@ Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1');
 
 // ── Authenticated Routes (any logged-in user) ──
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function () {
     Route::get('/user', function (Request $request) {
         return new UserResource($request->user());
     });
@@ -24,7 +24,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 });
 
 // ── Admin Routes (admin role only) ─────────────
-Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(function () {
     // User Management
     Route::apiResource('users', UserController::class);
     Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);

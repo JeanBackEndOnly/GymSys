@@ -14,7 +14,7 @@ class RegisterService
     {
         return DB::transaction(function () use ($data, $profileImage) {
             $data['password'] = Hash::make($data['password']);
-            $data['qr_code'] = $data['qr_code'] ?? uniqid('QR-');
+            $data['qr_code'] = 'QR-' . \Illuminate\Support\Str::uuid();
             
             if ($profileImage) {
                 $data['profile'] = $profileImage->store('profiles', 'public');
