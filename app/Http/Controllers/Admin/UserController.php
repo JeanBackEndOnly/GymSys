@@ -36,12 +36,11 @@ class UserController extends Controller
                 'status' => 'success',
                 'message' => 'Registered Successfully.',
                 'data' => [
-                    'user' => new UserResource($result['user']),
-                    'token' => $result['token'],
+                    'user' => new UserResource($result['user'])
                 ],
             ], 201);
         } catch (\Throwable $e) {
-            Log::error('User creation failed: ' . $e->getMessage());
+           \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Creating user failed. Please try again.',
@@ -79,7 +78,7 @@ class UserController extends Controller
                 'data' => new UserResource($user->fresh()),
             ], 200);
         } catch (\Throwable $e) {
-            Log::error('Update user failed: ' . $e->getMessage());
+           \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Update user failed. Please try again.',
@@ -98,7 +97,7 @@ class UserController extends Controller
                 'data' => new UserResource($user),
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('View user failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch user data. Please try again.',
@@ -139,7 +138,7 @@ class UserController extends Controller
                 'data' => $users,
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Fetch users failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch user data. Please try again.',
@@ -168,7 +167,7 @@ class UserController extends Controller
                 'message' => 'User ' . $name . ' deleted successfully.',
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Delete user failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to delete user. Please try again.',
@@ -181,16 +180,16 @@ class UserController extends Controller
         $this->authorize('updateRole', $user);
 
         $request->validate([
-            'role' => ['required', 'string', 'in:member,admin,cashier,staff'],
+            'role' => ['required', 'string', 'in:member,cashier,staff'],
         ]);
 
         // Prevent self-demotion (admin can't remove their own admin role)
-        if (auth('sanctum')->id() === $user->id) {
-            return response()->json([
-                'status' => 0,
-                'message' => 'You cannot change your own role.',
-            ], 403);
-        }
+        // if (auth('sanctum')->id() === $user->id) {
+        //     return response()->json([
+        //         'status' => 0,
+        //         'message' => 'You cannot change your own role.',
+        //     ], 403);
+        // }
 
         $user->update(['role' => $request->role]);
 
@@ -202,7 +201,7 @@ class UserController extends Controller
 
     public function approveUser(User $user)
     {
-        $this->authorize('update', $user);
+        $this->authorize('approve', $user);
 
         $user->update(['status' => 'active']);
 

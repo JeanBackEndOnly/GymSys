@@ -13,7 +13,7 @@ class AdminMiddleware
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+    public function handle($request, $next)
     {
         if (!auth('sanctum')->check() || !auth('sanctum')->user()->isAdmin()) {
             abort(403, 'Admin access only.');

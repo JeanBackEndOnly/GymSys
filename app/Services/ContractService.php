@@ -20,7 +20,6 @@ class ContractService
                 'status' => $data['status'] ?? 'active',
             ]);
 
-
             $contract->payment()->create([
                 'user_id'          => $data['user_id'],
                 'payment_type'     => $data['payment_type'],
@@ -30,9 +29,10 @@ class ContractService
                 'payment_status'   => $data['payment_status'] ?? 'pending'
             ]);
 
-            return $contract->load('payment', 'user');
+            return $contract;
         });
     }
+
     public function update(ContractUpdateRequest $request, Contract $contract)
     {
         try {
@@ -46,7 +46,7 @@ class ContractService
                 'data' => new ContractResource($contract->fresh()),
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Contract update failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Contract update failed. Please try again.',

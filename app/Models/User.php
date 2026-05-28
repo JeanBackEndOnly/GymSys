@@ -51,12 +51,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function isAdmin(): bool{
-        return $this->role === 'admin';
-    }
-    public function isCashier(): bool{
-        return $this->role === 'cashier';
-    }
+    public function isAdmin(): bool { return $this->role === 'admin'; }
+    public function isCashier(): bool { return $this->role === 'cashier'; }
+    public function hasRole(string $role): bool { return $this->role === $role; }
     public function membership_fee(): HasOne
     {
         return $this->hasOne(MembershipFee::class);

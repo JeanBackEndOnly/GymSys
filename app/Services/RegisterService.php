@@ -31,7 +31,15 @@ class RegisterService
                 'paid_at' => now(),
             ]);
             
-            // Create token
+            $isAdminLoggedIn = auth('sanctum')->check() && auth('sanctum')->user()->isAdmin();
+            
+            if ($isAdminLoggedIn) {
+                return [
+                    'user' => $user,
+                    'message' => 'Account created successfully by admin',
+                ];
+            }
+            
             $token = $user->createToken('auth_token')->plainTextToken;
             
             return [

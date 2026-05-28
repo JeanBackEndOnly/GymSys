@@ -38,7 +38,7 @@ class UserCreateRequest extends FormRequest
             'sex'        => ['nullable', 'string', 'in:male,female'],
             'email'      => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'username'      => ['required', 'string', 'max:255', 'unique:users,username'],
-            'profile'    => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', 'dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000'],
             'password'   => [
                 'required',
                 'string',

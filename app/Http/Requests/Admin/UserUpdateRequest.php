@@ -40,8 +40,8 @@ class UserUpdateRequest extends FormRequest
             'height'     => ['nullable', 'numeric', 'min:0'],
             'weight'     => ['nullable', 'numeric', 'min:0'],
             'email'      => ['nullable', 'string', 'email', 'max:255'],
-            'profile'    => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'icon'       => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:1024'],
+            'profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', 'dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000'],
+            'icon' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', 'dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000'],
             'password'   => [
                 'nullable',
                 'string',

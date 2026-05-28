@@ -23,19 +23,19 @@ class ContractPolicy
         return in_array($user->role, ['admin', 'cashier']);
     }
 
-    public function create(User $user): bool
+    public function create(User $user, int $targetUserId): bool // this avoid unvalidated ID
     {
         if ($user->role === 'admin') {
             return true;
         }
 
         if ($user->role === 'cashier') {
-            $targetUser = User::find(request('user_id'));
+            $targetUser = User::find($targetUserId);
             return $targetUser && $targetUser->role === 'member';
         }
 
         return false;
-    }
+    }   
 
     public function update(User $user, Contract $contract): bool
     {

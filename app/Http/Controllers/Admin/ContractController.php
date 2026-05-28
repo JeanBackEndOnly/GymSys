@@ -52,7 +52,7 @@ class ContractController extends Controller
                 'data' => $contracts,
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Fetch Contracts failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch Contracts. Please try again.',
@@ -62,17 +62,21 @@ class ContractController extends Controller
     public function store(ContractRequest $request)
     {
         try {
-            $this->authorize('create', Contract::class);
+            $validated = $request->validated();
+            $this->authorize('create', [Contract::class, $validated["user_id"]]);
 
-            $contract = $this->contractService->create($request->validated());
+            $contract = $this->contractService->create($validated);
+            
+            $contract->load(['user', 'payment']);
             
             return response()->json([
                 'status' => 1,
                 'message' => 'Contract created successfully.',
-                'data' => new ContractResource($contract->load(['user', 'payment'])),
+                'data' => new ContractResource($contract),
             ], 201);
+            
         } catch (\Throwable $e) {
-            \Log::error('Contract creation failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Contract process failed. Please try again.',
@@ -92,7 +96,7 @@ class ContractController extends Controller
                 'data' => new ContractResource($contract->load(['user', 'payment'])),
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Fetch Contract failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch Contract. Please try again.',
@@ -125,7 +129,7 @@ class ContractController extends Controller
                 'data' => new ContractResource($contract->fresh(['user', 'payment'])),
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Contract update failed: ' . $e->getMessage());
+            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'status' => 0,
                 'message' => 'Contract update failed. Please try again.',
