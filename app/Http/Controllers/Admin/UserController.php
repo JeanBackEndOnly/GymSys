@@ -97,7 +97,7 @@ class UserController extends Controller
                 'data' => new UserResource($user),
             ], 200);
         } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Log::error('Failed' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch user data. Please try again.',
@@ -177,19 +177,27 @@ class UserController extends Controller
 
     public function updateRole(Request $request, User $user)
     {
-        $this->authorize('updateRole', $user);
-
         $request->validate([
-            'role' => ['required', 'string', 'in:member,cashier,staff'],
+            'role' => ['required', 'string', 'in:member,cashier,staff'], // NO admin
         ]);
 
-        // Prevent self-demotion (admin can't remove their own admin role)
-        // if (auth('sanctum')->id() === $user->id) {
-        //     return response()->json([
-        //         'status' => 0,
-        //         'message' => 'You cannot change your own role.',
-        //     ], 403);
-        // }
+        $this->authorize('updateRole', [$user, $request->role]);
+
+        // Cannot change your own role
+        if (auth('sanctum')->id() === $user->id) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'You cannot change your own role.',
+            ], 403);
+        }
+
+        // Cannot change another admin's role
+        if ($user->role === 'admin') {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Cannot change another admin\'s role.',
+            ], 403);
+        }
 
         $user->update(['role' => $request->role]);
 

@@ -19,7 +19,7 @@ class RegisterService
             if ($profileImage) {
                 $data['profile'] = $profileImage->store('profiles', 'public');
             }
-            
+
             $user = User::create($data);
             
             $user->membership_fee()->create([
@@ -40,12 +40,12 @@ class RegisterService
                 ];
             }
             
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // $token = $user->createToken('auth_token')->plainTextToken;
             
-            return [
-                'user' => $user,
-                'token' => $token,
-            ];
+            // return [
+            //     'user' => $user,
+            //     'token' => $token,
+            // ];
         });
     }
 }

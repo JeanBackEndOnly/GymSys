@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ContractController;
+use App\Http\Resources\UserResource;
 
 // ── Public Routes ──────────────────────────────
 Route::post('/register', [AuthController::class, 'register'])
@@ -16,7 +17,7 @@ Route::post('/login', [AuthController::class, 'login'])
 // ── Authenticated Routes (any logged-in user) ──
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return new UserResource($request->user());
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);

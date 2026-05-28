@@ -61,6 +61,10 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            if ($user->status !== 'active') {
+                return response()->json(['message' => 'Account pending approval'], 403);
+            }
+
             // Delete ALL old tokens (no currentAccessToken check needed)
             $user->tokens()->delete();
 
