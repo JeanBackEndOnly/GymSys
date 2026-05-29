@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('contract_id')->constrained('contract')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('payment_type')->nullable();
-            $table->decimal('payment_amount', 10, 2)->nullable();
+            $table->decimal('contract_amount', 10, 2);
+            $table->decimal('payment_amount', 10, 2);
             $table->string('or_number')->nullable();
             $table->string('transaction_id')->nullable();
             $table->string('payment_status')->nullable();

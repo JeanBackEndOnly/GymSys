@@ -26,6 +26,7 @@ class ContractRequest extends FormRequest
 
             // Payment fields
             'payment_type'     => ['required', 'string', 'in:cash,gcash'],
+            'contract_amount'   => ['required', 'numeric', 'min:0'],
             'payment_amount'   => ['required', 'numeric', 'min:0'],
             'or_number'        => ['nullable', 'string', 'max:255'], // it's auto generated ID for this payment
             'transaction_id'   => ['nullable', 'string', 'max:255'], // for Gcash transaction id

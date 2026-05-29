@@ -15,6 +15,7 @@ class Payment extends Model
         'contract_id',
         'user_id',
         'payment_type',
+        'contract_amount',
         'payment_amount',
         'or_number',
         'transaction_id',

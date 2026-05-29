@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ContractController;
+use App\Http\Controllers\Admin\WalkInInfoController;
 use App\Http\Resources\UserResource;
 
 // ── Public Routes ──────────────────────────────
@@ -32,4 +33,7 @@ Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(f
     
     // Contract Management
     Route::apiResource('contracts', ContractController::class);
+
+    // Walk-in Management
+    Route::apiResource('walkins', WalkInInfoController::class);
 });

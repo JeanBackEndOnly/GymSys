@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('middlename')->nullable();
             $table->string('lastname');
             $table->string('suffix')->nullable();
-            $table->string('email')->nullable()->unique();  // optional but helpful
+            $table->string('email')->unique();  // optional but helpful
             $table->string('contact')->unique();  // prevent duplicate walk-ins
             $table->integer('total_visits')->default(1);  // starts at 1
             $table->timestamps();

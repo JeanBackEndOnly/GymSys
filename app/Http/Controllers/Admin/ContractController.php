@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\ContractService;
 use App\Http\Requests\Admin\ContractRequest;
 use App\Http\Requests\Admin\ContractUpdateRequest;
@@ -66,7 +67,6 @@ class ContractController extends Controller
             $this->authorize('create', [Contract::class, $validated["user_id"]]);
 
             $contract = $this->contractService->create($validated);
-            
             $contract->load(['user', 'payment']);
             
             return response()->json([
@@ -75,12 +75,13 @@ class ContractController extends Controller
                 'data' => new ContractResource($contract),
             ], 201);
             
-        } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            \Log::error('Contract creation failed', ['error' => $e->getMessage()]);
+            
             return response()->json([
                 'status' => 0,
-                'message' => 'Contract process failed. Please try again.',
-            ], 500);
+                'message' => $e->getMessage(), 
+            ], 400); 
         }
     }
 
