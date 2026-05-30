@@ -5,14 +5,14 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProductUpdateRequest extends FormRequest
+class ProductPaycheckUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return in_array(auth()->user()->role, ['admin', 'cashier']);
+        return false;
     }
 
     /**
@@ -23,11 +23,7 @@ class ProductUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required' , 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'min:20'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'quantity' => ['required', 'integer', 'min:0'],
-            'sold' => ['required', 'integer', 'min:0']
+            //
         ];
     }
 }

@@ -6,14 +6,14 @@ use App\Models\Products;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class ProductPolicy
+class ProductsPolicy
 {
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -21,7 +21,7 @@ class ProductPolicy
      */
     public function view(User $user, Products $products): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -29,7 +29,7 @@ class ProductPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -37,7 +37,7 @@ class ProductPolicy
      */
     public function update(User $user, Products $products): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -45,7 +45,7 @@ class ProductPolicy
      */
     public function delete(User $user, Products $products): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**

@@ -12,10 +12,7 @@ class ProductStoreRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isCashier())){
-            return true;
-        }
-        return false;
+        return in_array(auth()->user()->role, ['admin', 'cashier']);
     }
 
     /**

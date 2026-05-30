@@ -13,7 +13,7 @@ class ProductPaycheckPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -21,7 +21,7 @@ class ProductPaycheckPolicy
      */
     public function view(User $user, ProductPaycheck $productPaycheck): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -29,7 +29,7 @@ class ProductPaycheckPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -37,7 +37,7 @@ class ProductPaycheckPolicy
      */
     public function update(User $user, ProductPaycheck $productPaycheck): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**
@@ -45,7 +45,7 @@ class ProductPaycheckPolicy
      */
     public function delete(User $user, ProductPaycheck $productPaycheck): bool
     {
-        return false;
+        return in_array($user->role, ['admin', 'cashier']);
     }
 
     /**

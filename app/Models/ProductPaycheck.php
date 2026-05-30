@@ -11,8 +11,8 @@ class ProductPaycheck extends Model
 {
     protected $table = 'product_paycheck';
     protected $fillable = [
-        'product_id ',
-        'sold_by ',
+        'product_id',
+        'sold_by',
         'paid_by',
         'paid_by_name',
         'quantity',

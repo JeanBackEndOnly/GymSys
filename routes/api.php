@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ContractController;
 use App\Http\Controllers\Admin\WalkInInfoController;
 use App\Http\Controllers\Admin\WalkInAttendanceController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductPaycheckController;
 use App\Http\Resources\UserResource;
 
 // ── Public Routes ──────────────────────────────
@@ -44,4 +45,7 @@ Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(f
 
     // Products Management 
     Route::apiResource('products', ProductController::class);
+
+    // Products paycheck Management 
+    Route::apiResource('products-paycheck', ProductPaycheckController::class);
 });
