@@ -3,26 +3,28 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Resources\WalkInAttendanceResource;
 use App\Models\WalkInAttendance;
 use App\Http\Requests\Admin\WalkInAttendanceRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class WalkInAttendanceController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(){
+    public function index()
+    {
         try {
             $this->authorize('viewAny', WalkInAttendance::class);
             $walkins = WalkInAttendance::all();
+            
             return response()->json([
                 'status' => 1,
                 'message' => 'walk-in attendance fetch successfully!',
-                'data' => $walkins,
-            ], 201);
+                'data' => WalkInAttendanceResource::collection($walkins),
+            ], 200); // 200 not 201
         } catch (\Throwable $e) {
-            \Log::error('Failed' . $e->getMessage());
+            \Log::error('Failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch walk-in data. Please try again.',
@@ -54,7 +56,7 @@ class WalkInAttendanceController extends Controller
             return response()->json([
                 'status' => 1,
                 'message' => 'walk-in attendance created successfully!',
-                'data' => $walkins,
+                'data' => new WalkInAttendanceResource($walkins),
             ], 201);
             
         } catch (\Throwable $e) {
@@ -76,8 +78,8 @@ class WalkInAttendanceController extends Controller
             return response()->json([
                 'status' => 1,
                 'message' => 'walk-in attendance fetched successfully!',
-                'data' => $walkInAttendance,
-            ], 200);  // 200 not 201 for show
+                'data' => new WalkInAttendanceResource($walkInAttendance),
+            ], 200);
         } catch (\Throwable $e) {
             \Log::error('Failed: ' . $e->getMessage());
             return response()->json([

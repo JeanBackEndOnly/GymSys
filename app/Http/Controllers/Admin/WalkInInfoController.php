@@ -3,34 +3,38 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Resources\WalkInInfoResource;
 use App\Models\WalkInInfo;
 use App\Http\Requests\Admin\WalkInInfoCreateRequest;
 use App\Http\Requests\Admin\WalkIninfoUpdate;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class WalkInInfoController extends Controller
 {
     use AuthorizesRequests;
     
-    public function index(){
+    public function index()
+    {
         try {
             $this->authorize('viewAny', WalkInInfo::class);
             $walkins = WalkInInfo::all();
+            
             return response()->json([
                 'status' => 1,
                 'message' => 'walk-in applicants fetch successfully!',
-                'data' => $walkins,
-            ], 201);
+                'data' => WalkInInfoResource::collection($walkins),
+            ], 200); // 200 not 201
         } catch (\Throwable $e) {
-            \Log::error('Failed' . $e->getMessage());
+            \Log::error('Failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch walk-in data. Please try again.',
             ], 500);
         }
     }
-    public function store(WalkInInfoCreateRequest $request){
+
+    public function store(WalkInInfoCreateRequest $request)
+    {
         try {
             \Log::info('WalkIn data:', $request->all());
             $validated = $request->validated();
@@ -41,16 +45,17 @@ class WalkInInfoController extends Controller
             return response()->json([
                 'status' => 1,
                 'message' => 'walk-in applicant created successfully!',
-                'data' => $walkin,
+                'data' => new WalkInInfoResource($walkin),
             ], 201);
         } catch (\Throwable $e) {
-            \Log::error('Failed' . $e->getMessage());
+            \Log::error('Failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to create walk-in data. Please try again.',
             ], 500);
         }
     }
+
     public function show($id)
     {
         try {
@@ -68,7 +73,7 @@ class WalkInInfoController extends Controller
             return response()->json([
                 'status' => 1,
                 'message' => $walkInInfo->firstname . ': walk-in applicant fetched successfully!',
-                'data' => $walkInInfo,
+                'data' => new WalkInInfoResource($walkInInfo),
             ], 200);
             
         } catch (\Throwable $e) {
@@ -92,8 +97,8 @@ class WalkInInfoController extends Controller
             return response()->json([
                 'status' => 1,
                 'message' => $walkInInfo->firstname . ': walk-in applicant updated successfully!',
-                'data' => $walkInInfo->fresh(),  
-            ], 200);  
+                'data' => new WalkInInfoResource($walkInInfo->fresh()),
+            ], 200);
             
         } catch (\Throwable $e) {
             \Log::error('Failed: ' . $e->getMessage());
