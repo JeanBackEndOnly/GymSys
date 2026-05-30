@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ContractController;
 use App\Http\Controllers\Admin\WalkInInfoController;
+use App\Http\Controllers\Admin\WalkInAttendanceController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Resources\UserResource;
 
 // ── Public Routes ──────────────────────────────
@@ -36,4 +38,10 @@ Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(f
 
     // Walk-in Management
     Route::apiResource('walkins', WalkInInfoController::class);
+
+    // Walk-in Management 
+    Route::apiResource('walkins-attendance', WalkInAttendanceController::class);
+
+    // Products Management 
+    Route::apiResource('products', ProductController::class);
 });

@@ -5,7 +5,7 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class WalkInInfoCreateRequest extends FormRequest
+class WalkInAttendanceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,12 +26,10 @@ class WalkInInfoCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'firstname' => ['required', 'string', 'max:255'],
-            'middlename' => ['nullable', 'string', 'max:255'],
-            'lastname' => ['required', 'string', 'max:255'],
-            'suffix' => ['nullable', 'string', 'in:jr,II,III,IV,V,VI'],
-            'email' => ['required', 'email', 'unique:walk_in_info,email', 'max:255'],
-            'contact' => ['required', 'string', 'min:11', 'max:15', 'unique:walk_in_info,contact']
+            'walk_in_id' => ['required', 'exists:walk_in_info,id'],
+            'time_in' => ['nullable', 'date_format:Y-m-d H:i:s'],
+            'fee_paid' => ['nullable', 'numeric', 'min:0'],
+            'assisted_by' => ['required', 'exists:users,id'],
         ];
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\WalkInInfo;
 use App\Http\Requests\Admin\WalkInInfoCreateRequest;
+use App\Http\Requests\Admin\WalkIninfoUpdate;
 
 class WalkInInfoController extends Controller
 {
@@ -31,6 +32,7 @@ class WalkInInfoController extends Controller
     }
     public function store(WalkInInfoCreateRequest $request){
         try {
+            \Log::info('WalkIn data:', $request->all());
             $validated = $request->validated();
             $this->authorize('create', WalkInInfo::class);
 
@@ -74,6 +76,30 @@ class WalkInInfoController extends Controller
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch walk-in data. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function update(WalkIninfoUpdate $request, $id)
+    {
+        try {
+            $walkInInfo = WalkInInfo::findOrFail($id);
+            
+            $this->authorize('update', $walkInInfo);
+            
+            $walkInInfo->update($request->validated());
+
+            return response()->json([
+                'status' => 1,
+                'message' => $walkInInfo->firstname . ': walk-in applicant updated successfully!',
+                'data' => $walkInInfo->fresh(),  
+            ], 200);  
+            
+        } catch (\Throwable $e) {
+            \Log::error('Failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 0,
+                'message' => 'Failed to update walk-in data. Please try again.',
             ], 500);
         }
     }

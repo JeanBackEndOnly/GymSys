@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFee;
 use App\Models\Contract;
 
@@ -54,11 +55,15 @@ class User extends Authenticatable
     public function isAdmin(): bool { return $this->role === 'admin'; }
     public function isCashier(): bool { return $this->role === 'cashier'; }
     public function hasRole(string $role): bool { return $this->role === $role; }
+
     public function membership_fee(): HasOne
     {
         return $this->hasOne(MembershipFee::class);
     }
     public function contract(): HasOne{
         return $this->hasOne(Contract::class);
+    }
+    public function product_paychecks(): HasMany{
+        return $this->hasMany(ProductPaycheck::class);
     }
 }

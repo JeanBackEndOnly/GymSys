@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Services\RegisterService;
 
 class AuthController extends Controller
 {
@@ -20,7 +19,6 @@ class AuthController extends Controller
     ) {}
 
     public function register(RegisterRequest $request)
-
     {
         try {
             $validated = $request->validated();
@@ -47,6 +45,7 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    
     public function login(LoginRequest $request)
     {
         try {

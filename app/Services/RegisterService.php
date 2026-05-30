@@ -32,20 +32,19 @@ class RegisterService
             ]);
             
             $isAdminLoggedIn = auth('sanctum')->check() && auth('sanctum')->user()->isAdmin();
-            
+        
             if ($isAdminLoggedIn) {
                 return [
                     'user' => $user,
                     'message' => 'Account created successfully by admin',
                 ];
             }
-            
-            // $token = $user->createToken('auth_token')->plainTextToken;
-            
-            // return [
-            //     'user' => $user,
-            //     'token' => $token,
-            // ];
+
+            // FIX: Return array, not just user
+            return [
+                'user' => $user,
+                'token' => null,
+            ];
         });
     }
 }
