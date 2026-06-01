@@ -215,7 +215,8 @@ class UserController extends Controller
     {
         $this->authorize('approve', $user);
 
-        $user->update(['status' => 'active']);
+        $user->status = 'active';
+        $user->save();  // ← Not update()
 
         return response()->json([
             'status' => 1,
