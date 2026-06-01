@@ -36,7 +36,6 @@ class WalkInInfoController extends Controller
     public function store(WalkInInfoCreateRequest $request)
     {
         try {
-            \Log::info('WalkIn data:', $request->all());
             $validated = $request->validated();
             $this->authorize('create', WalkInInfo::class);
 

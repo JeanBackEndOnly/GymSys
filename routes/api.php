@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\WalkInInfoController;
 use App\Http\Controllers\Admin\WalkInAttendanceController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductPaycheckController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Resources\UserResource;
 
 // ── Public Routes ──────────────────────────────
@@ -48,4 +49,7 @@ Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(f
 
     // Products paycheck Management 
     Route::apiResource('products-paycheck', ProductPaycheckController::class);
+
+    // Reports Management 
+    Route::apiResource('reports', ReportController::class);
 });

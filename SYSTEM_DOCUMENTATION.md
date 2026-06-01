@@ -28,6 +28,7 @@ Full system control.
   - Manage all financial payments, process refunds, and view sales.
   - Manage Gym Settings (Pricing, System configs).
   - View comprehensive Reports (Revenue, Attendance, Sales).
+  - chat system in reports (full crud)
 
 ### Cashier (Staff)
 Handles daily front-desk operations.
@@ -142,3 +143,14 @@ A single cron job runs php artisan schedule:run every minute. Once configured, L
 - transaction_id VARCHAR(255) NULL - GCash reference
 - payment_status ENUM('pending','paid','failed') DEFAULT 'paid'
 - created_at
+
+## ADMIN Features crud
+# Feature
+- Users management (DONE)
+- Contract Management (DONE)
+- Membership in user creation manegement (DONE)
+- walk-in info and attendance management (DONE)
+- reports management (DONE)
+- notifications management (PENDING)
+- mini POS management (DONE)
+- members attendance management

@@ -50,8 +50,6 @@ class UserUpdateRequest extends FormRequest
                     ->mixedCase()
                     ->symbols(),
             ],
-            'status'     => ['nullable', 'string', 'in:active,inactive'],
-            'role'       => ['nullable', 'string', 'in:member,admin,cashier,staff'],
         ];
     }
 }

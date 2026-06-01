@@ -51,9 +51,7 @@ class ProductPaycheckController extends Controller
             
         } catch (\Throwable $e) {
             return response()->json([
-                'status' => 0,
-                'message' => $e->getMessage(),
-                'line' => $e->getLine()
+                'message' => 'Server error. Please try again.'
             ], 500);
         }
     }

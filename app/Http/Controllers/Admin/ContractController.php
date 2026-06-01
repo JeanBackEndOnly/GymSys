@@ -78,10 +78,7 @@ class ContractController extends Controller
         } catch (\Exception $e) {
             \Log::error('Contract creation failed', ['error' => $e->getMessage()]);
             
-            return response()->json([
-                'status' => 0,
-                'message' => $e->getMessage(), 
-            ], 400); 
+            return response()->json(['message' => 'Server error'], 500);
         }
     }
 

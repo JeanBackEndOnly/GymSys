@@ -19,8 +19,8 @@ class CheckActiveStatusMiddleware
 
         if ($user && $user->status !== 'active') {
             return response()->json([
-                'message' => 'Your account is not active.'
-            ], 403);
+                'message' => 'Invalid credentials.'
+            ], 401);
         }
 
         return $next($request);

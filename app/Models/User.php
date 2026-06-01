@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFee;
 use App\Models\Contract;
+use App\Models\Report;
 
 #[Fillable(['firstname',
         'middlename',
@@ -30,7 +31,6 @@ use App\Models\Contract;
         'sex',
         'height',
         'weight',
-        'status',
         'profile', 
         'icon',])]
         
@@ -65,5 +65,8 @@ class User extends Authenticatable
     }
     public function product_paychecks(): HasMany{
         return $this->hasMany(ProductPaycheck::class);
+    }
+    public function reports(): HasMany{
+        return $this->hasMany(Report::class);
     }
 }
