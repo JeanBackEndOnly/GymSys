@@ -144,13 +144,58 @@ A single cron job runs php artisan schedule:run every minute. Once configured, L
 - payment_status ENUM('pending','paid','failed') DEFAULT 'paid'
 - created_at
 
-## ADMIN Features crud
-# Feature
-- Users management (DONE)
-- Contract Management (DONE)
-- Membership in user creation manegement (DONE)
-- walk-in info and attendance management (DONE)
-- reports management (DONE)
-- notifications management (PENDING)
-- mini POS management (DONE)
-- members attendance management
+## GYMBACKEND - FUNCTIONAL FEATURES
+# AUTHENTICATION
+•	POST /api/register - Register user
+•	POST /api/login - Login + token
+•	GET /api/user - Get current user
+•	POST /api/logout - Logout
+•	POST /api/change-password - Change password
+# USERS (Admin/Cashier)
+•	GET /api/users - List users
+•	POST /api/users - Create user
+•	GET /api/users/{id} - View user
+•	PUT/PATCH /api/users/{id} - Update user
+•	DELETE /api/users/{id} - Delete user
+•	PATCH /api/users/{id}/role - Update role
+•	PATCH /api/users/{id}/approve - Approve user
+# CONTRACTS
+•	GET /api/contracts - List contracts
+•	POST /api/contracts - Create contract
+•	GET /api/contracts/{id} - View contract
+•	PUT/PATCH /api/contracts/{id} - Update contract
+•	DELETE /api/contracts/{id} - Delete contract
+# PRODUCTS
+•	GET /api/products - List products
+•	POST /api/products - Create product
+•	GET /api/products/{id} - View product
+•	PUT/PATCH /api/products/{id} - Update product
+•	DELETE /api/products/{id} - Delete product
+# PRODUCT PAYCHECK
+•	GET /api/products-paycheck - List sales
+•	POST /api/products-paycheck - Create sale
+•	GET /api/products-paycheck/{id} - View sale
+•	PUT/PATCH /api/products-paycheck/{id} - Update sale
+•	DELETE /api/products-paycheck/{id} - Delete sale
+# WALK-INS
+•	GET /api/walkins - List walk-ins
+•	POST /api/walkins - Create walk-in
+•	GET /api/walkins/{id} - View walk-in
+•	PUT/PATCH /api/walkins/{id} - Update walk-in
+•	DELETE /api/walkins/{id} - Delete walk-in
+# WALK-IN ATTENDANCE
+•	GET /api/walkins-attendance - List attendance
+•	POST /api/walkins-attendance - Check-in
+•	GET /api/walkins-attendance/{id} - View
+•	PUT/PATCH /api/walkins-attendance/{id} - Update
+•	DELETE /api/walkins-attendance/{id} - Delete
+# REPORTS
+•	GET /api/reports - List reports
+•	POST /api/reports - Create report
+•	GET /api/reports/{id} - View report
+•	PUT/PATCH /api/reports/{id} - Update report
+•	DELETE /api/reports/{id} - Delete report
+# MISSING
+•	❌ Member QR Attendance endpoints
+•	❌ Dashboard Stats endpoint
+
