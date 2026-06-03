@@ -198,4 +198,3 @@ A single cron job runs php artisan schedule:run every minute. Once configured, L
 # MISSING
 •	❌ Member QR Attendance endpoints
 •	❌ Dashboard Stats endpoint
-

@@ -47,7 +47,7 @@ class UserCreateRequest extends FormRequest
                     ->mixedCase()
                     ->symbols(),
             ],
-            'payment_amount' => 'required|numeric|min:0',
+            'payment_amount' => 'required|numeric|min:150',
             'or_number'        => ['required', 'string', 'max:255'], 
             'transaction_id'   => ['nullable', 'string', 'max:255'], 
             'payment_type'   => ['required', 'string', 'in:cash,gcash'],
