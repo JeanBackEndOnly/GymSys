@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Admin\UserCreateRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Http\Requests\Admin\CashierStoreRequest;
+use App\Http\Requests\Admin\UserApproveRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -239,17 +240,46 @@ class UserController extends Controller
         ]);
     }
 
-    public function approveUser(User $user)
+    public function approveUser(UserApproveRequest $request, User $user)
     {
-        $this->authorize('approve', $user);
-
-        $user->status = 'active';
-        $user->save();  // ← Not update()
-
-        return response()->json([
-            'status' => 1,
-            'message' => $user->firstname . ' approved successfully.',
-        ]);
+        try {
+            $this->authorize('approve', $user);
+            
+            $user->status = 'active';
+            $user->save();
+            
+            $validated = $request->validated();
+            
+            $validated["or_number"] = 'OR-' . strtoupper(uniqid()) . rand(1000, 9999);
+            $validated["payment_status"] = 'paid';
+            $validated["transaction_id"] = null;
+            $validated["payment_amount"] = 150.00;
+            
+            $membership_fee = $user->membership_fee()->create([
+                'user_id' => $user->id,
+                'or_number' => $validated["or_number"],
+                'payment_status' => $validated["payment_status"],
+                'payment_amount' => $validated["payment_amount"],
+                'payment_type' => $validated["payment_type"],
+                'transaction_id' => $validated["transaction_id"]
+            ]);
+            
+            return response()->json([
+                'status' => 1,
+                'message' => $user->firstname . ' approved successfully.',
+                'data' => [
+                    'user' => new UserResource($user->load('membership_fee'))
+                ]
+            ], 200);
+            
+        } catch (\Throwable $e) {
+            \Log::error('User approval failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'status' => 0,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
     public function disapproveUser(User $user)
     {

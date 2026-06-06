@@ -77,7 +77,12 @@ class ContractController extends Controller
             
         } catch (\Exception $e) {
             \Log::error('Contract creation failed', ['error' => $e->getMessage()]);
-            
+            if ($e->getMessage() === 'User has an active contract. Cannot create new contract.') {
+                return response()->json([
+                    'status' => 0,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
             return response()->json(['message' => 'Server error'], 500);
         }
     }

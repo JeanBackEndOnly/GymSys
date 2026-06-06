@@ -14,6 +14,7 @@ class MembershipFee extends Model
         'user_id',
         'payment_amount',
         'payment_type',
+        'payment_status',
         'or_number',
         'transaction_id',
         'paid_at'

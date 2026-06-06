@@ -14,7 +14,8 @@ class Products extends Model
         'description',
         'price',
         'quantity',
-        'sold'
+        'sold',
+        'profile'
     ];
     public function product_paychecks(): HasMany{
         return $this->hasMany(ProductPaycheck::class);

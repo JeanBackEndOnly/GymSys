@@ -8,6 +8,7 @@ use App\Models\Products;
 use App\Http\Requests\Admin\ProductStoreRequest;
 use App\Http\Requests\Admin\ProductUpdateRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -18,6 +19,9 @@ class ProductController extends Controller
         try {
             $validated = $request->validated();
             $this->authorize('create', Products::class);
+
+            $validated["profile"] = $request->hasFile('profile') ?
+                $request->file('profile')->store('products', 'public') : null;
 
             $products = Products::create($validated);
 
@@ -41,6 +45,13 @@ class ProductController extends Controller
             $validated = $request->validated();
             $products = Products::findOrFail($id);
             $this->authorize('update', $products);
+
+            if($request->hasFile('profile')){
+                if($products->profile && Storage::disk('public')->exists($products->profile)){
+                    Storage::disk('public')->delete($products->profile);
+                }
+                $validated["profile"] = $request->file('profile')->store('products', 'public');
+            }
 
             $products->update($validated);
 
