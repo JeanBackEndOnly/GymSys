@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Admin\UserCreateRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
+use App\Http\Requests\Admin\CashierStoreRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -179,31 +180,29 @@ class UserController extends Controller
         }
     }
 
-    public function storeCashier(UserCreateRequest $request){
+    public function storeCashier(CashierStoreRequest $request)
+    {
         try {
             $this->authorize('create', User::class);
-            $validated = $request->validated();
-
-            unset($validated['role']);
-            $validated['role'] = 'cashier';
             
-            $result = $this->registerService->register(
-                $validated, 
-                $request->hasFile('profile') ? $request->file('profile') : null
+            $user = User::createCashier(
+                $request->validated(),
+                $request->file('profile')
             );
             
             return response()->json([
                 'status' => 'success',
-                'message' => 'Registered Successfully.',
+                'message' => 'Cashier registered successfully.',
                 'data' => [
-                    'user' => new UserResource($result['user'])
+                    'user' => new UserResource($user)
                 ],
             ], 201);
+            
         } catch (\Throwable $e) {
-           \Log::error('Failed' . $e->getMessage());
+            \Log::error('Failed to create cashier: ' . $e->getMessage());
             return response()->json([
                 'status' => 0,
-                'message' => 'Creating user failed. Please try again.',
+                'message' => 'Creating cashier failed. Please try again.',
             ], 500);
         }
     }

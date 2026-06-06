@@ -23,16 +23,17 @@ class AuthController extends Controller
         try {
             $validated = $request->validated();
             
-            $result = $this->registerService->register(
-                $validated, 
-                $request->hasFile('profile') ? $request->file('profile') : null
-            );
+            $validated["password"] = Hash::make($request->password);
+            $validated["profile"] = $request->hasFile('profile') ?
+                $request->file('profile')->store('profiles', 'public') : null;
             
+            $user = User::create($validated);
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Registered Successfully.',
                 'data' => [
-                    'user' => new UserResource($result['user']),
+                    'user' => new UserResource($user),
                     'token' => null,
                 ],
             ], 201);
@@ -41,7 +42,7 @@ class AuthController extends Controller
             Log::error('Register failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Register failed, please try again.'
+                'message' => $e->getMessage()
             ], 500);
         }
     }

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFee;
 use App\Models\Contract;
 use App\Models\Report;
+use Illuminate\Support\Facades\Hash;
 
 #[Fillable(['firstname',
         'middlename',
@@ -68,5 +69,22 @@ class User extends Authenticatable
     }
     public function reports(): HasMany{
         return $this->hasMany(Report::class);
+    }
+
+    // create cashier
+    public static function createCashier(array $data, $profileImage = null)
+    {
+        $user = new self($data);
+        $user->role = 'cashier';
+        $user->status = 'active';
+        $user->password = Hash::make($data['password']);
+        
+        if ($profileImage) {
+            $user->profile = $profileImage->store('profiles', 'public');
+        }
+        
+        $user->save();
+        
+        return $user;
     }
 }
