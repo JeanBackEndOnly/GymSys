@@ -32,6 +32,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function (
 Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(function () {
     // User Management
     Route::apiResource('users', UserController::class);
+    Route::post('/users/cashier', [UserController::class, 'storeCashier']); 
     Route::patch('/users/{user}/role', [UserController::class, 'updateRole']);
     Route::patch('/users/{user}/approve', [UserController::class, 'approveUser']);
     

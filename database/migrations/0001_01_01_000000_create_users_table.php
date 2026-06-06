@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('profile')->nullable();
             $table->string('icon')->nullable();
             $table->string('password');
-            $table->enum('status', ['active', 'inactive', 'pending'])->default('pending');
+            $table->enum('status', ['active', 'inactive', 'pending', 'archive'])->default('pending');
             $table->enum('role', ['member', 'admin', 'cashier', 'staff'])->default('member');
             $table->timestamps();
         });

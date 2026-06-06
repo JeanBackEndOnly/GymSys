@@ -179,6 +179,35 @@ class UserController extends Controller
         }
     }
 
+    public function storeCashier(UserCreateRequest $request){
+        try {
+            $this->authorize('create', User::class);
+            $validated = $request->validated();
+
+            unset($validated['role']);
+            $validated['role'] = 'cashier';
+            
+            $result = $this->registerService->register(
+                $validated, 
+                $request->hasFile('profile') ? $request->file('profile') : null
+            );
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Registered Successfully.',
+                'data' => [
+                    'user' => new UserResource($result['user'])
+                ],
+            ], 201);
+        } catch (\Throwable $e) {
+           \Log::error('Failed' . $e->getMessage());
+            return response()->json([
+                'status' => 0,
+                'message' => 'Creating user failed. Please try again.',
+            ], 500);
+        }
+    }
+
     public function updateRole(Request $request, User $user)
     {
         $request->validate([
@@ -216,6 +245,18 @@ class UserController extends Controller
         $this->authorize('approve', $user);
 
         $user->status = 'active';
+        $user->save();  // ← Not update()
+
+        return response()->json([
+            'status' => 1,
+            'message' => $user->firstname . ' approved successfully.',
+        ]);
+    }
+    public function disapproveUser(User $user)
+    {
+        $this->authorize('disapprove', $user);
+
+        $user->status = 'archive';
         $user->save();  // ← Not update()
 
         return response()->json([
