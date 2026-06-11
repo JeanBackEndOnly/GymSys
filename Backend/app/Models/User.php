@@ -87,4 +87,21 @@ class User extends Authenticatable
         
         return $user;
     }
+
+    // create Staff
+    public static function createStaff(array $data, $profileImage = null)
+    {
+        $user = new self($data);
+        $user->role = 'staff';
+        $user->status = 'active';
+        $user->password = Hash::make($data['password']);
+        
+        if ($profileImage) {
+            $user->profile = $profileImage->store('profiles', 'public');
+        }
+        
+        $user->save();
+        
+        return $user;
+    }
 }

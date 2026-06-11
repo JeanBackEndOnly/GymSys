@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Admin\UserCreateRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
-use App\Http\Requests\Admin\CashierStoreRequest;
+use App\Http\Requests\Admin\SystemAccountRequest;
 use App\Http\Requests\Admin\UserApproveRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -181,15 +181,23 @@ class UserController extends Controller
         }
     }
 
-    public function storeCashier(CashierStoreRequest $request)
+    public function storeSystemAccount(SystemAccountRequest $request)
     {
         try {
             $this->authorize('create', User::class);
             
-            $user = User::createCashier(
-                $request->validated(),
-                $request->file('profile')
-            );
+            if($request->role === 'cashier'){
+                $user = User::createCashier(
+                    $request->validated(),
+                    $request->file('profile')
+                );
+            }else if($request->role === 'staff'){
+                $user = User::createStaff(
+                    $request->validated(),
+                    $request->file('profile')
+                );
+            }
+            
             
             return response()->json([
                 'status' => 'success',
