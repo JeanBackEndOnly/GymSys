@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductPaycheckStoreRequest;
+use App\Http\Requests\Admin\ProductPaycheckUpdateRequest;
 use App\Http\Resources\ProductPaycheckResource;
 use App\Services\ProductPaycheckService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -51,6 +52,29 @@ class ProductPaycheckController extends Controller
                 'message' => 'Product paycheck successfully created.',
                 'data' => new ProductPaycheckResource($paycheck),
             ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => $e->getMessage() ?: 'Server error. Please try again.',
+            ], 500);
+        }
+    }
+
+    // ✅ ADD THIS UPDATE METHOD
+    public function update(ProductPaycheckUpdateRequest $request, $id)
+    {
+        try {
+            $paycheck = ProductPaycheck::findOrFail($id);
+            $this->authorize('update', $paycheck);
+            
+            $updatedPaycheck = $this->paycheckService->updatePaycheck($id, $request->validated());
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Product paycheck successfully updated.',
+                'data' => new ProductPaycheckResource($updatedPaycheck),
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([

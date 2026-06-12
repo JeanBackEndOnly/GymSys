@@ -116,4 +116,26 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    public function destroy($id){
+        try {
+            $products = Products::findOrFail($id);
+            $this->authorize('delete', $products);
+
+            if($products->profile && Storage::disk('public')->exists($products->profile)){
+                Storage::disk('public')->delete($products->profile);
+            }
+            $products->delete();
+            return response()->json([
+                'status' => 1,
+                'message' => 'Product deleted successfully!',
+            ], 200);
+        } catch (\Throwable $e) {
+            \Log::error('Failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 0,
+                'message' => 'Failed to Delete product data. Please try again.',
+            ], 500);
+        }
+    }
 }

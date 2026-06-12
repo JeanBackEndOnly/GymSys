@@ -40,6 +40,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Helper function to get image URL
+const getImageUrl = (profile: string | undefined | null): string | null => {
+  if (!profile) return null;
+  if (profile.startsWith('http')) return profile;
+  if (profile.startsWith('/storage')) return `http://localhost:8000${profile}`;
+  if (profile.startsWith('products/')) return `http://localhost:8000/storage/${profile}`;
+  return `http://localhost:8000/storage/${profile}`;
+};
+
 export default function AdminPOS() {
   const [paymentMode, setPaymentMode] = useState<'cash' | 'gcash'>('cash');
   const [amountTendered, setAmountTendered] = useState<string>('');
@@ -92,58 +101,6 @@ export default function AdminPOS() {
     });
   };
 
-  // const checkoutMutation = useMutation({
-  //   mutationFn: async () => {
-  //     const transactionOrNumber = `OR-${new Date().getTime()}`;
-      
-  //     const paidById = isWalkIn ? user!.id : Number(selectedMemberId);
-  //     const paidByName = isWalkIn ? walkInName : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname;
-
-  //     const promises = cart.map((item, index) => {
-  //       return productService.submitPaycheck({
-  //         product_id: item.product.id,
-  //         sold_by: user!.id,
-  //         paid_by: paidById, // Workaround for walk-ins: use admin/cashier ID to prevent 500 error
-  //         paid_by_name: paidByName,
-  //         quantity: item.quantity,
-  //         unit_price: Number(item.product.price),
-  //         total_price: Number(item.product.price) * item.quantity,
-  //         payment_type: paymentMode,
-  //         or_number: `${transactionOrNumber}-${index}`,
-  //         transaction_id: paymentMode === 'gcash' ? refNum : null,
-  //         payment_status: 'paid'
-  //       });
-  //     });
-  //     await Promise.all(promises);
-  //     return transactionOrNumber;
-  //   },
-  //   onSuccess: (orNumber) => {
-  //     toast.success('Transaction completed successfully!');
-      
-  //     // Setup receipt data before clearing cart
-  //     setReceiptData({
-  //       orNumber,
-  //       items: [...cart],
-  //       total: cartTotal,
-  //       paymentMode,
-  //       amountTendered: paymentMode === 'cash' ? amountTendered : null,
-  //       change: paymentMode === 'cash' ? change : 0,
-  //       refNum: paymentMode === 'gcash' ? refNum : null,
-  //       customerName: isWalkIn ? walkInName : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname,
-  //       date: new Date()
-  //     });
-  //     setShowReceipt(true);
-
-  //     setCart([]);
-  //     setAmountTendered('');
-  //     setRefNum('');
-  //     setIsCheckoutOpen(false);
-  //     queryClient.invalidateQueries({ queryKey: ['products'] });
-  //   },
-  //   onError: (error: any) => {
-  //     toast.error(error.response?.data?.message || 'Failed to process checkout.');
-  //   }
-  // });
   const checkoutMutation = useMutation({
     mutationFn: async () => {
       const orNumber = `OR-${new Date().getTime()}`;
@@ -153,7 +110,6 @@ export default function AdminPOS() {
         ? walkInName 
         : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname;
 
-      // ✅ ONE request with ALL products
       const payload = {
         sold_by: user!.id,
         paid_by: paidById,
@@ -169,7 +125,6 @@ export default function AdminPOS() {
         }))
       };
 
-      // const response = await productService.submitPaycheck(payload);
       const response = await productService.submitPaycheck(payload as any);
       return { orNumber, response };
     },
@@ -242,18 +197,38 @@ export default function AdminPOS() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {products.map((product: Product) => (
-                    <div 
-                      key={product.id} 
-                      onClick={() => addToCart(product)}
-                      className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/50 transition-all cursor-pointer text-center group"
-                    >
-                      <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">🏷️</div>
-                      <p className="text-sm font-medium line-clamp-1">{product.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1">₱{Number(product.price).toLocaleString()}</p>
-                      <p className="text-[10px] text-white/30 mt-1">{product.quantity - product.sold} in stock</p>
-                    </div>
-                  ))}
+                  {products.map((product: Product) => {
+                    const imageUrl = getImageUrl(product.profile);
+                    const currentStock = (product.quantity || 0) - (product.sold || 0);
+                    
+                    return (
+                      <div 
+                        key={product.id} 
+                        onClick={() => addToCart(product)}
+                        className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/50 transition-all cursor-pointer text-center group"
+                      >
+                        {/* Product Image - show image if exists, otherwise show tag icon */}
+                        <div className="w-full h-24 mb-3 flex items-center justify-center">
+                          {imageUrl ? (
+                            <img 
+                              src={imageUrl} 
+                              alt={product.name}
+                              className="h-full w-auto object-contain group-hover:scale-110 transition-transform duration-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement?.querySelector('.tag-icon')?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <span className={`tag-icon text-5xl ${imageUrl ? 'hidden' : ''}`}>🏷️</span>
+                        </div>
+                        
+                        <p className="text-sm font-medium line-clamp-1">{product.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">₱{Number(product.price).toLocaleString()}</p>
+                        <p className="text-[10px] text-white/30 mt-1">{currentStock} in stock</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -266,32 +241,49 @@ export default function AdminPOS() {
                   <ShoppingCart className="size-5" />
                   Current Cart
                 </CardTitle>
-                <Badge className="bg-primary/20 text-primary">3 items</Badge>
+                <Badge className="bg-primary/20 text-primary">{cart.length} items</Badge>
               </CardHeader>
               <CardContent className="flex-1 space-y-4">
                 <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
                   {cart.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">Cart is empty</div>
                   ) : (
-                    cart.map((item) => (
-                      <div key={item.product.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-lg bg-white/5 flex items-center justify-center">🏷️</div>
-                          <div>
-                            <p className="text-sm font-medium line-clamp-1 max-w-[120px]">{item.product.name}</p>
-                            <p className="text-xs text-muted-foreground">₱{Number(item.product.price).toLocaleString()} x {item.quantity}</p>
+                    cart.map((item) => {
+                      const imageUrl = getImageUrl(item.product.profile);
+                      return (
+                        <div key={item.product.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-lg bg-white/5 flex items-center justify-center">
+                              {imageUrl ? (
+                                <img 
+                                  src={imageUrl} 
+                                  alt={item.product.name}
+                                  className="w-full h-full object-cover rounded-lg"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.parentElement!.innerHTML = '<span class="text-xl">🏷️</span>';
+                                  }}
+                                />
+                              ) : (
+                                <span className="text-xl">🏷️</span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium line-clamp-1 max-w-[120px]">{item.product.name}</p>
+                              <p className="text-xs text-muted-foreground">₱{Number(item.product.price).toLocaleString()} x {item.quantity}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center bg-white/5 rounded-lg border border-white/10">
+                              <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1 hover:bg-white/10 rounded-l-lg"><Minus className="size-3"/></button>
+                              <span className="text-xs px-2 min-w-[20px] text-center">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1 hover:bg-white/10 rounded-r-lg"><Plus className="size-3"/></button>
+                            </div>
+                            <p className="text-sm font-bold min-w-[60px] text-right">₱{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center bg-white/5 rounded-lg border border-white/10">
-                            <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1 hover:bg-white/10 rounded-l-lg"><Minus className="size-3"/></button>
-                            <span className="text-xs px-2 min-w-[20px] text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1 hover:bg-white/10 rounded-r-lg"><Plus className="size-3"/></button>
-                          </div>
-                          <p className="text-sm font-bold min-w-[60px] text-right">₱{(Number(item.product.price) * item.quantity).toLocaleString()}</p>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
                 

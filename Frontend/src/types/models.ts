@@ -64,6 +64,7 @@ export interface Product {
   price: number;
   quantity: number;
   sold: number;
+  profile: string | null;
   created_at: string;
   updated_at: string;
 }
