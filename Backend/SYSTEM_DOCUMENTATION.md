@@ -198,3 +198,12 @@ A single cron job runs php artisan schedule:run every minute. Once configured, L
 # MISSING
 •	❌ Member QR Attendance endpoints
 •	❌ Dashboard Stats endpoint
+
+
+## add table for products sold that is Foreigned to product_paycheck
+# Product_sales
+- id
+- paycheck_id
+- product_id
+
+## May bug sa products mamaya kona ayusin

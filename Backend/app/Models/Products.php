@@ -3,21 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\ProductPaycheck;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Products extends Model
 {
     protected $table = 'products';
     protected $fillable = [
-        'name',
-        'description',
-        'price',
-        'quantity',
-        'sold',
-        'profile'
+        'name', 'description', 'price', 'quantity', 'sold', 'profile'
     ];
-    public function product_paychecks(): HasMany{
-        return $this->hasMany(ProductPaycheck::class);
+
+    // Many-to-many with product_paycheck through product_sold
+    public function productPaychecks(): BelongsToMany
+    {
+        return $this->belongsToMany(ProductPaycheck::class, 'product_sold')
+                    ->withPivot('quantity', 'price_at_sale')
+                    ->withTimestamps();
     }
 }

@@ -17,7 +17,7 @@ class WalkInInfoController extends Controller
     {
         try {
             $this->authorize('viewAny', WalkInInfo::class);
-            $walkins = WalkInInfo::with('walk_in_attendance')->all();
+            $walkins = WalkInInfo::all();
             
             return response()->json([
                 'status' => 1,

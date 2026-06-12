@@ -17,7 +17,7 @@ class WalkInInfo extends Model
         'email',
         'contact'
     ];
-    public function walk_in_attendance():HasMany{
+    public function walk_in_attendance(): HasMany{
         return $this->hasMany(WalkInAttendance::class);
     }
 }

@@ -5,53 +5,77 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductPaycheckStoreRequest;
 use App\Http\Resources\ProductPaycheckResource;
+use App\Services\ProductPaycheckService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Models\ProductPaycheck;
-use App\Models\User;
 
 class ProductPaycheckController extends Controller
 {
     use AuthorizesRequests;
 
-    public function store(ProductPaycheckStoreRequest $request)
+    protected $paycheckService;
+
+    public function __construct(ProductPaycheckService $paycheckService)
+    {
+        $this->paycheckService = $paycheckService;
+    }
+
+    public function index()
     {
         try {
-            $validated = $request->validated();    
-            $this->authorize('create', ProductPaycheck::class);
-
-            $isUserInactive = User::where('id', $validated["sold_by"])
-                                ->where('status', 'active') // Fix: 'active' not 'pending'
-                                ->exists();
-            if (!$isUserInactive) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => 'The user must be active. Please try again.',
-                ], 400);
-            }
-
-            if ($validated["paid_by"] !== null) {
-                $isUserInactive = User::where('id', $validated["paid_by"])
-                                    ->where('status', 'active') // Fix: 'active' not 'pending'
-                                    ->exists();
-                if (!$isUserInactive) {
-                    return response()->json([
-                        'status' => 0,
-                        'message' => 'The user must be active. Please try again.',
-                    ], 400);
-                }
-            }
-
-            $products = ProductPaycheck::create($validated);
+            $this->authorize('viewAny', ProductPaycheck::class);
+            $paychecks = $this->paycheckService->getAllPaychecks();
 
             return response()->json([
                 'status' => 1,
-                'message' => 'Product pay check successfully created.',
-                'data' => new ProductPaycheckResource($products),
-            ], 201);
-            
+                'message' => 'Product paychecks fetched successfully.',
+                'data' => ProductPaycheckResource::collection($paychecks),
+            ], 200);
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Server error. Please try again.'
+                'status' => 0,
+                'message' => 'Server error. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function store(ProductPaycheckStoreRequest $request)
+    {
+        try {
+            $this->authorize('create', ProductPaycheck::class);
+            
+            $paycheck = $this->paycheckService->createPaycheck($request->validated());
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Product paycheck successfully created.',
+                'data' => new ProductPaycheckResource($paycheck),
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => $e->getMessage() ?: 'Server error. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $this->authorize('delete', ProductPaycheck::class);
+            
+            $this->paycheckService->deletePaycheck($id);
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Product paycheck successfully deleted.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => $e->getMessage() ?: 'Server error. Please try again.',
             ], 500);
         }
     }
