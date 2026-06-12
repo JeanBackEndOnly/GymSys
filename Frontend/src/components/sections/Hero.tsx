@@ -67,7 +67,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section ref={heroRef} className="relative min-h-screen flex flex-col items-center overflow-hidden px-6 text-center pt-24 md:pt-32 pb-20">
+    <section id="home" ref={heroRef} className="relative min-h-screen flex flex-col items-center overflow-hidden px-6 text-center pt-24 md:pt-32 pb-20">
       <div className="absolute inset-0 z-0">
         <img 
           src="/hero.png" 
