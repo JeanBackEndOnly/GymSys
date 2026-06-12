@@ -86,10 +86,10 @@ const LoginPage = () => {
 
         <div className="relative z-10 h-full p-6 md:p-12 flex flex-col justify-between">
           <Link to="/" className="flex items-center gap-2 group w-fit">
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Dumbbell className="text-black size-5" />
+            <div className="w-10 h-10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <img src="/logo_gym.png" alt="Gym Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-2xl font-black uppercase tracking-tighter text-white">Iron</span>
+            <span className="text-2xl font-black uppercase tracking-tighter text-white">NFH</span>
           </Link>
 
           <div className="hidden md:block space-y-4">
