@@ -1,104 +1,170 @@
-import { Check, ShieldCheck, Zap, Star } from 'lucide-react';
+import { Check, ShieldCheck, Zap, Star, Trophy, Users, Dumbbell, Activity, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Membership = () => {
-  const features = [
-    "₱500 One-time Registration Fee",
-    "Flexible Monthly, Quarterly, & Yearly Contracts",
-    "Smart QR Dynamic Check-in",
-    "Access to Interactive Workout Planner",
-    "Real-time Attendance Tracking",
-    "Face-to-face Secure Payments at Counter",
-    "No Auto-charges or Online Fees",
-    "Instant PWA App Activation"
-  ];
-
   return (
     <section id="membership" className="py-24 md:py-32 px-6">
-      <div className="max-w-7xl mx-auto text-center mb-12 md:mb-24">
-        <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-white/40 mb-4">Membership</h2>
-        <h3 className="text-4xl md:text-7xl font-black uppercase mb-6 md:mb-8 text-balance">
-          Join the <span className="text-gradient">Elite.</span>
+      <div className="max-w-7xl mx-auto text-center mb-16">
+        <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-white/40 mb-4">Pricing Plans</h2>
+        <h3 className="text-4xl md:text-7xl font-black uppercase mb-6 text-balance">
+          Choose Your <span className="text-gradient">Grind.</span>
         </h3>
         <p className="text-white/50 max-w-2xl mx-auto text-base md:text-lg font-medium px-4">
-          One all-inclusive membership for those who demand the absolute best. No tiers, no compromises—just pure performance.
+          From daily walk-ins to comprehensive trainer packages, we have the right plan to help you achieve your goals. All memberships require a one-time registration fee of <span className="text-white font-bold">₱150.00</span>.
         </p>
       </div>
 
-      <div className="max-w-5xl mx-auto">
-        <div className="relative group">
-          {/* Animated Background Glow */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-white/20 to-white/5 rounded-[40px] blur-xl opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-          
-          <div className="relative glass border-white/10 rounded-3xl md:rounded-[40px] overflow-hidden">
-            <div className="flex flex-col md:grid md:grid-cols-5 h-full">
-              {/* Left Side: Pricing & CTA */}
-              <div className="md:col-span-2 p-8 md:p-16 flex flex-col justify-center border-b md:border-b-0 md:border-r border-white/5 bg-white/[0.02]">
-                <div className="mb-8">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-widest mb-6">
-                    <Star className="size-3 fill-current" />
-                    All-Access Pass
-                  </div>
-                  <h4 className="text-2xl font-black uppercase tracking-tight mb-4 text-white">Elite Membership</h4>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-white">₱</span>
-                    <span className="text-6xl md:text-7xl font-black leading-none text-white">1,500</span>
-                    <span className="text-sm font-bold uppercase text-white/40">/ mo</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Link to="/register">
-                    <Button variant="premium" size="lg" className="w-full h-14 rounded-full text-lg font-bold uppercase">
-                      Apply Now
-                    </Button>
-                  </Link>
-                  <Button variant="ghost" size="lg" className="w-full h-14 rounded-full text-white/60 hover:text-white border border-white/5 hover:bg-white/5 uppercase text-xs tracking-widest pointer-events-none">
-                    Payments are Face-to-Face Only
-                  </Button>
-                </div>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        {/* Regular Membership */}
+        <div className="relative group flex flex-col h-full">
+          <div className="absolute -inset-1 bg-white/5 rounded-3xl blur-md transition duration-500 group-hover:bg-white/10"></div>
+          <div className="relative glass border border-white/10 rounded-3xl p-8 flex flex-col h-full hover:border-white/20 transition duration-300">
+            <div className="mb-8">
+              <Users className="size-8 text-white/40 mb-4" />
+              <h4 className="text-2xl font-black uppercase tracking-tight mb-2 text-white">Regular Member</h4>
+              <p className="text-white/50 text-sm mb-6">Standard monthly access for all individuals.</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black text-white">₱</span>
+                <span className="text-5xl font-black leading-none text-white">550</span>
+                <span className="text-sm font-bold uppercase text-white/40">/ mo</span>
               </div>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              {['Full gym equipment access', 'Smart QR check-in', 'Locker room access', '₱50.00 Walk-in Member rate'].map((feat, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <Check className="size-4 text-white/70 mt-0.5" />
+                  <span className="text-sm text-white/70">{feat}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/register">
+              <Button variant="outline" className="w-full rounded-full border-white/20 text-white hover:bg-white hover:text-black">
+                Select Plan
+              </Button>
+            </Link>
+          </div>
+        </div>
 
-              {/* Right Side: Features Grid */}
-              <div className="md:col-span-3 p-8 md:p-16">
-                <h5 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-6 md:mb-8">What's Included</h5>
-                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-6">
-                  {features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className="size-5 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="size-3 text-white" aria-hidden="true" />
-                      </div>
-                      <span className="text-sm font-medium text-white/70">{feature}</span>
-                    </div>
-                  ))}
-                </div>
+        {/* Student Membership */}
+        <div className="relative group flex flex-col h-full">
+          <div className="absolute -inset-1 bg-white/5 rounded-3xl blur-md transition duration-500 group-hover:bg-white/10"></div>
+          <div className="relative glass border border-white/10 rounded-3xl p-8 flex flex-col h-full hover:border-white/20 transition duration-300">
+            <div className="mb-8">
+              <Dumbbell className="size-8 text-white/40 mb-4" />
+              <h4 className="text-2xl font-black uppercase tracking-tight mb-2 text-white">Student Member</h4>
+              <p className="text-white/50 text-sm mb-6">Discounted rate for students (Valid ID required).</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black text-white">₱</span>
+                <span className="text-5xl font-black leading-none text-white">480</span>
+                <span className="text-sm font-bold uppercase text-white/40">/ mo</span>
+              </div>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              {['All regular member benefits', 'Special student discount', 'Smart QR check-in', 'Requires valid Student ID upon payment'].map((feat, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <Check className="size-4 text-white/70 mt-0.5" />
+                  <span className="text-sm text-white/70">{feat}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/register">
+              <Button variant="outline" className="w-full rounded-full border-white/20 text-white hover:bg-white hover:text-black">
+                Select Plan
+              </Button>
+            </Link>
+          </div>
+        </div>
 
-                <div className="mt-12 pt-8 border-t border-white/5 grid grid-cols-2 gap-6">
-                   <div className="flex items-center gap-4">
-                     <ShieldCheck className="size-8 text-white/20" />
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 leading-tight">
-                       No Online <br />Transactions
-                     </div>
-                   </div>
-                   <div className="flex items-center gap-4">
-                     <Zap className="size-8 text-white/20" />
-                     <div className="text-[10px] font-bold uppercase tracking-widest text-white/40 leading-tight">
-                       Secure In-Person <br />Cashier Approval
-                     </div>
-                   </div>
-                </div>
+        {/* Highlighted Trainer Package */}
+        <div className="relative group flex flex-col h-full md:transform md:-translate-y-4">
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-primary/30 rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition duration-1000"></div>
+          <div className="relative bg-[#1a1a1a] border border-primary/50 rounded-3xl p-8 flex flex-col h-full shadow-2xl">
+            <div className="absolute top-0 right-8 transform -translate-y-1/2">
+              <span className="bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full flex items-center gap-1">
+                <Star className="size-3 fill-current" /> Recommended
+              </span>
+            </div>
+            <div className="mb-8">
+              <Trophy className="size-8 text-primary mb-4" />
+              <h4 className="text-2xl font-black uppercase tracking-tight mb-2 text-white">Trainer Package</h4>
+              <p className="text-white/50 text-sm mb-6">Ultimate guidance for serious transformations.</p>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-2xl font-black text-white">₱</span>
+                <span className="text-4xl font-black leading-none text-white">850</span>
+                <span className="text-sm font-bold uppercase text-white/40">/ 15 days</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-white">₱</span>
+                <span className="text-4xl font-black leading-none text-white">1,500</span>
+                <span className="text-sm font-bold uppercase text-white/40">/ 1 month</span>
+              </div>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              {['Personalized workout routine', 'One-on-one expert guidance', 'Form correction & safety', 'Dietary & supplement advice'].map((feat, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <Check className="size-4 text-primary mt-0.5" />
+                  <span className="text-sm font-medium text-white/90">{feat}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/register">
+              <Button variant="premium" className="w-full rounded-full h-12 font-bold uppercase tracking-widest">
+                Get Started
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Services (Walk-ins & Court Rent) */}
+      <div className="max-w-7xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        {/* Walk-in Rates */}
+        <div className="glass border border-white/5 rounded-3xl p-8 flex items-center gap-6">
+          <div className="size-16 rounded-2xl bg-white/5 flex flex-shrink-0 items-center justify-center">
+            <Activity className="size-8 text-white/60" />
+          </div>
+          <div>
+            <h4 className="text-lg font-black uppercase tracking-tight mb-2">Daily Walk-ins</h4>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
+              <div>
+                <span className="text-white/50 text-xs font-bold uppercase tracking-widest block mb-1">Non-Member</span>
+                <span className="text-2xl font-black">₱60.00</span>
+              </div>
+              <div>
+                <span className="text-white/50 text-xs font-bold uppercase tracking-widest block mb-1">Active Member</span>
+                <span className="text-2xl font-black text-primary">₱50.00</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <p className="text-center mt-12 text-white/30 text-xs font-bold uppercase tracking-[0.2em]">
-          Invitation Only. Limited to 500 Active Members.
-        </p>
+
+        {/* Basketball Court Rent */}
+        <div className="glass border border-white/5 rounded-3xl p-8 flex items-center gap-6">
+          <div className="size-16 rounded-2xl bg-white/5 flex flex-shrink-0 items-center justify-center">
+            <Clock className="size-8 text-white/60" />
+          </div>
+          <div>
+            <h4 className="text-lg font-black uppercase tracking-tight mb-2">Basketball Court Rent</h4>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
+              <div>
+                <span className="text-white/50 text-xs font-bold uppercase tracking-widest block mb-1">7AM - 6PM</span>
+                <span className="text-2xl font-black">₱150<span className="text-sm text-white/40">/hr</span></span>
+              </div>
+              <div>
+                <span className="text-white/50 text-xs font-bold uppercase tracking-widest block mb-1">6PM - 10PM</span>
+                <span className="text-2xl font-black text-primary">₱200<span className="text-sm text-white/40">/hr</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   );
 };
 
 export default Membership;
+
