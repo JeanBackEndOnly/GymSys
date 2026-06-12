@@ -14,7 +14,6 @@ class ProductPaycheckStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Receipt/Header data
             "sold_by" => ["required", "exists:users,id"],
             "paid_by" => ["nullable", "exists:users,id"],
             "paid_by_name" => ["nullable", "string", "max:255"],
@@ -23,19 +22,13 @@ class ProductPaycheckStoreRequest extends FormRequest
             "transaction_id" => ["nullable", "string", "max:255"],
             "payment_status" => ["nullable", "string", "in:pending,paid,failed"],
             
-            // EITHER single product OR products array (both use pivot)
-            "product_id" => ["required_without:products", "exists:products,id"],
-            "quantity" => ["required_without:products", "integer", "min:1"],
-            "unit_price" => ["required_without:products", "numeric", "min:0"],
-            
-            // OR multiple products
-            "products" => ["required_without:product_id", "array", "min:1"],
-            "products.*.product_id" => ["required_with:products", "exists:products,id"],
-            "products.*.quantity" => ["required_with:products", "integer", "min:1"],
-            "products.*.price_at_sale" => ["required_with:products", "numeric", "min:0"],
+            // Only products array (remove single product option to avoid confusion)
+            "products" => ["required", "array", "min:1"],
+            "products.*.product_id" => ["required", "exists:products,id"],
+            "products.*.quantity" => ["required", "integer", "min:1"],
+            "products.*.price_at_sale" => ["required", "numeric", "min:0"],
         ];
     }
-
     public function messages(): array
     {
         return [

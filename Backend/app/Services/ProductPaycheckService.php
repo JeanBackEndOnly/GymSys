@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProductPaycheck;
+use App\Models\ProductSold;
 use App\Models\Products;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ class ProductPaycheckService
         DB::beginTransaction();
 
         try {
-            // Create receipt header (NO product columns here!)
+            // Create receipt header
             $paycheck = ProductPaycheck::create([
                 'sold_by' => $data['sold_by'],
                 'paid_by' => $data['paid_by'] ?? null,
@@ -33,13 +34,12 @@ class ProductPaycheckService
                 'payment_status' => $data['payment_status'] ?? 'paid',
             ]);
 
-            // Handle products (always use pivot table, even for single product)
-            $products = [];
+            // Handle products (single or multiple)
+            $items = [];
             
-            // Check if single product or multiple products
             if (isset($data['product_id'])) {
-                // Convert single product to array format
-                $products = [
+                // Single product format
+                $items = [
                     [
                         'product_id' => $data['product_id'],
                         'quantity' => $data['quantity'],
@@ -47,22 +47,22 @@ class ProductPaycheckService
                     ]
                 ];
             } elseif (isset($data['products'])) {
-                // Multiple products
-                $products = $data['products'];
+                // Multiple products format
+                $items = $data['products'];
             } else {
                 throw new \Exception('No products provided.');
             }
 
-            // Attach all products to pivot table
-            foreach ($products as $productData) {
-                $this->attachProductToPaycheck($paycheck, $productData);
-                $this->updateProductInventory($productData['product_id'], $productData['quantity']);
+            // Create each item in product_sold table
+            foreach ($items as $item) {
+                $this->createProductSoldItem($paycheck->id, $item);
+                $this->updateProductInventory($item['product_id'], $item['quantity']);
             }
 
             DB::commit();
             
-            // Load relationship for response
-            $paycheck->load('products');
+            // Load items with their product details for response
+            $paycheck->load('items.product');
             
             return $paycheck;
 
@@ -73,14 +73,22 @@ class ProductPaycheckService
         }
     }
 
-    private function attachProductToPaycheck(ProductPaycheck $paycheck, array $productData): void
+    /**
+     * Create a single product sold item
+     */
+    private function createProductSoldItem(int $paycheckId, array $itemData): void
     {
-        $paycheck->products()->attach($productData['product_id'], [
-            'quantity' => $productData['quantity'],
-            'price_at_sale' => $productData['price_at_sale'],
+        ProductSold::create([
+            'paycheck_id' => $paycheckId,
+            'product_id' => $itemData['product_id'],
+            'quantity' => $itemData['quantity'],
+            'price_at_sale' => $itemData['price_at_sale'],
         ]);
     }
 
+    /**
+     * Update product inventory (decrease quantity, increase sold count)
+     */
     public function updateProductInventory(int $productId, int $quantity): void
     {
         $product = Products::findOrFail($productId);
@@ -88,6 +96,9 @@ class ProductPaycheckService
         $product->increment('sold', $quantity);
     }
 
+    /**
+     * Validate that a user exists and is active
+     */
     public function validateActiveUser(int $userId): void
     {
         $user = User::where('id', $userId)
@@ -99,26 +110,42 @@ class ProductPaycheckService
         }
     }
 
+    /**
+     * Get all paychecks with their items and products
+     */
     public function getAllPaychecks()
     {
-        return ProductPaycheck::with('products')->get();
+        return ProductPaycheck::with('items.product')->get();
     }
 
+    /**
+     * Get a single paycheck with its items and products
+     */
+    public function getPaycheckById(int $id)
+    {
+        return ProductPaycheck::with('items.product')->find($id);
+    }
+
+    /**
+     * Delete a paycheck and restore product inventory
+     */
     public function deletePaycheck(int $paycheckId): bool
     {
-        $paycheck = ProductPaycheck::with('products')->findOrFail($paycheckId);
+        $paycheck = ProductPaycheck::with('items.product')->findOrFail($paycheckId);
 
         DB::beginTransaction();
 
         try {
-            // Restore inventory for each product
-            foreach ($paycheck->products as $product) {
-                $product->increment('quantity', $product->pivot->quantity);
-                $product->decrement('sold', $product->pivot->quantity);
+            // Restore inventory for each product sold
+            foreach ($paycheck->items as $item) {
+                $product = $item->product;
+                $product->increment('quantity', $item->quantity);
+                $product->decrement('sold', $item->quantity);
             }
 
-            // Delete the paycheck (cascade will delete pivot records)
+            // Delete the paycheck (cascade will delete product_sold records if set)
             $deleted = $paycheck->delete();
+            
             DB::commit();
             return $deleted;
 
@@ -127,5 +154,24 @@ class ProductPaycheckService
             Log::error('Failed to delete paycheck: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Get total revenue from all paychecks
+     */
+    public function getTotalRevenue(): float
+    {
+        $items = ProductSold::with('paycheck')
+            ->whereHas('paycheck', function ($query) {
+                $query->where('payment_status', 'paid');
+            })
+            ->get();
+        
+        $total = 0;
+        foreach ($items as $item) {
+            $total += $item->quantity * $item->price_at_sale;
+        }
+        
+        return $total;
     }
 }

@@ -92,37 +92,92 @@ export default function AdminPOS() {
     });
   };
 
+  // const checkoutMutation = useMutation({
+  //   mutationFn: async () => {
+  //     const transactionOrNumber = `OR-${new Date().getTime()}`;
+      
+  //     const paidById = isWalkIn ? user!.id : Number(selectedMemberId);
+  //     const paidByName = isWalkIn ? walkInName : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname;
+
+  //     const promises = cart.map((item, index) => {
+  //       return productService.submitPaycheck({
+  //         product_id: item.product.id,
+  //         sold_by: user!.id,
+  //         paid_by: paidById, // Workaround for walk-ins: use admin/cashier ID to prevent 500 error
+  //         paid_by_name: paidByName,
+  //         quantity: item.quantity,
+  //         unit_price: Number(item.product.price),
+  //         total_price: Number(item.product.price) * item.quantity,
+  //         payment_type: paymentMode,
+  //         or_number: `${transactionOrNumber}-${index}`,
+  //         transaction_id: paymentMode === 'gcash' ? refNum : null,
+  //         payment_status: 'paid'
+  //       });
+  //     });
+  //     await Promise.all(promises);
+  //     return transactionOrNumber;
+  //   },
+  //   onSuccess: (orNumber) => {
+  //     toast.success('Transaction completed successfully!');
+      
+  //     // Setup receipt data before clearing cart
+  //     setReceiptData({
+  //       orNumber,
+  //       items: [...cart],
+  //       total: cartTotal,
+  //       paymentMode,
+  //       amountTendered: paymentMode === 'cash' ? amountTendered : null,
+  //       change: paymentMode === 'cash' ? change : 0,
+  //       refNum: paymentMode === 'gcash' ? refNum : null,
+  //       customerName: isWalkIn ? walkInName : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname,
+  //       date: new Date()
+  //     });
+  //     setShowReceipt(true);
+
+  //     setCart([]);
+  //     setAmountTendered('');
+  //     setRefNum('');
+  //     setIsCheckoutOpen(false);
+  //     queryClient.invalidateQueries({ queryKey: ['products'] });
+  //   },
+  //   onError: (error: any) => {
+  //     toast.error(error.response?.data?.message || 'Failed to process checkout.');
+  //   }
+  // });
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const transactionOrNumber = `OR-${new Date().getTime()}`;
+      const orNumber = `OR-${new Date().getTime()}`;
       
       const paidById = isWalkIn ? user!.id : Number(selectedMemberId);
-      const paidByName = isWalkIn ? walkInName : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname;
+      const paidByName = isWalkIn 
+        ? walkInName 
+        : users.find((u: any) => u.id === Number(selectedMemberId))?.firstname + ' ' + users.find((u: any) => u.id === Number(selectedMemberId))?.lastname;
 
-      const promises = cart.map((item, index) => {
-        return productService.submitPaycheck({
+      // ✅ ONE request with ALL products
+      const payload = {
+        sold_by: user!.id,
+        paid_by: paidById,
+        paid_by_name: paidByName,
+        payment_type: paymentMode,
+        or_number: orNumber,
+        transaction_id: paymentMode === 'gcash' ? refNum : null,
+        payment_status: 'paid',
+        products: cart.map(item => ({
           product_id: item.product.id,
-          sold_by: user!.id,
-          paid_by: paidById, // Workaround for walk-ins: use admin/cashier ID to prevent 500 error
-          paid_by_name: paidByName,
           quantity: item.quantity,
-          unit_price: Number(item.product.price),
-          total_price: Number(item.product.price) * item.quantity,
-          payment_type: paymentMode,
-          or_number: `${transactionOrNumber}-${index}`,
-          transaction_id: paymentMode === 'gcash' ? refNum : null,
-          payment_status: 'paid'
-        });
-      });
-      await Promise.all(promises);
-      return transactionOrNumber;
+          price_at_sale: Number(item.product.price)
+        }))
+      };
+
+      // const response = await productService.submitPaycheck(payload);
+      const response = await productService.submitPaycheck(payload as any);
+      return { orNumber, response };
     },
-    onSuccess: (orNumber) => {
+    onSuccess: (data) => {
       toast.success('Transaction completed successfully!');
       
-      // Setup receipt data before clearing cart
       setReceiptData({
-        orNumber,
+        orNumber: data.orNumber,
         items: [...cart],
         total: cartTotal,
         paymentMode,

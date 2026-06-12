@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ProductPaycheck extends Model
 {
@@ -25,14 +25,8 @@ class ProductPaycheck extends Model
         return $this->belongsTo(User::class, 'paid_by');
     }
 
-    public function products(): BelongsToMany
+    public function items(): HasMany
     {
-        return $this->belongsToMany(
-            Products::class,           // Related model
-            'product_sold',            // Pivot table name
-            'paycheck_id',             // ← Foreign key on pivot (matches your column)
-            'product_id'               // ← Related key on pivot (change if yours is 'products_id')
-        )->withPivot('quantity', 'price_at_sale')
-         ->withTimestamps();
+        return $this->hasMany(ProductSold::class, 'paycheck_id');
     }
 }
