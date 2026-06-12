@@ -14,17 +14,19 @@ const Navbar = () => {
     <nav className="fixed top-0 w-full z-50 glass border-b border-white/5 py-4 px-6 md:px-12 flex items-center h-20">
       {/* Logo Section - Left Balanced */}
       <Link to="/" className="flex-1 flex items-center justify-start gap-2 group">
-        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-          <Dumbbell className="text-black size-5" />
+        <div className="w-8 h-8 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <img src="/logo_gym.png" alt="Gym Logo" className="w-full h-full object-contain" />
         </div>
-        <span className="text-xl font-bold tracking-tighter uppercase">Iron</span>
+        <span className="text-sm md:text-base font-bold tracking-tighter uppercase whitespace-nowrap">Nutrition and Fitness Hub</span>
       </Link>
       
       {/* Links Section - Perfectly Centered */}
       <div className="hidden lg:flex items-center gap-10 text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
+        <a href="/#home" className="hover:text-white transition-all duration-300">Home</a>
+        <a href="/#location" className="hover:text-white transition-all duration-300">Location</a>
+        <a href="/#membership" className="hover:text-white transition-all duration-300">Membership</a>
         <a href="/#features" className="hover:text-white transition-all duration-300">Features</a>
         <a href="/#experience" className="hover:text-white transition-all duration-300">Experience</a>
-        <a href="/#membership" className="hover:text-white transition-all duration-300">Membership</a>
         <a href="/#app" className="hover:text-white transition-all duration-300">PWA</a>
       </div>
 
@@ -53,9 +55,11 @@ const Navbar = () => {
               <SheetDescription>Access gym features, membership options, and member login portal.</SheetDescription>
             </div>
             <div className="flex flex-col gap-8 mt-12">
-              <Link to="/register" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Features</Link>
-              <a href="/#experience" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Experience</a>
+              <a href="/#home" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Home</a>
+              <a href="/#location" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Location</a>
               <a href="/#membership" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Membership</a>
+              <a href="/#features" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Features</a>
+              <a href="/#experience" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">Experience</a>
               <a href="/#app" className="text-2xl font-black uppercase tracking-tighter hover:text-white/60">PWA</a>
               <div className="pt-8 border-t border-white/5 flex flex-col gap-4">
                 <Link to="/register">
