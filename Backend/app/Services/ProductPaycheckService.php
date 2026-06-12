@@ -126,34 +126,21 @@ class ProductPaycheckService
         return ProductPaycheck::with('items.product')->find($id);
     }
 
-    /**
-     * Delete a paycheck and restore product inventory
-     */
     public function deletePaycheck(int $paycheckId): bool
     {
-        $paycheck = ProductPaycheck::with('items.product')->findOrFail($paycheckId);
-
-        DB::beginTransaction();
-
-        try {
-            // Restore inventory for each product sold
-            foreach ($paycheck->items as $item) {
-                $product = $item->product;
-                $product->increment('quantity', $item->quantity);
-                $product->decrement('sold', $item->quantity);
+        $paycheck = ProductPaycheck::with('items')->findOrFail($paycheckId);
+        
+        // Restore inventory FIRST
+        foreach ($paycheck->items as $item) {
+            $product = Products::find($item->product_id);
+            if ($product) {
+                $product->increment('quantity', $item->quantity);   // Add back to stock
+                $product->decrement('sold', $item->quantity);      // Remove from sold count
             }
-
-            // Delete the paycheck (cascade will delete product_sold records if set)
-            $deleted = $paycheck->delete();
-            
-            DB::commit();
-            return $deleted;
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to delete paycheck: ' . $e->getMessage());
-            throw $e;
         }
+        
+        // THEN delete the paycheck
+        return $paycheck->delete();
     }
 
     /**

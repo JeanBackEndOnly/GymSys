@@ -63,8 +63,9 @@ class ProductPaycheckController extends Controller
     public function destroy($id)
     {
         try {
-            $this->authorize('delete', ProductPaycheck::class);
-            
+            $paycheck = ProductPaycheck::findOrFail($id);
+            $this->authorize('delete', $paycheck);
+
             $this->paycheckService->deletePaycheck($id);
 
             return response()->json([
@@ -72,7 +73,7 @@ class ProductPaycheckController extends Controller
                 'message' => 'Product paycheck successfully deleted.',
             ], 200);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'status' => 0,
                 'message' => $e->getMessage() ?: 'Server error. Please try again.',

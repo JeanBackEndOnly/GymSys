@@ -170,4 +170,5 @@ export const productService = {
   async deletePaycheck(id: number): Promise<void> {
     await api.delete(`/products-paycheck/${id}`);
   }
+  
 };
