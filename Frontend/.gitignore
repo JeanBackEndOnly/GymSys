@@ -43,3 +43,13 @@ build/
 out/
 
 gym_db.sql
+
+
+# Environment variables
+.env
+.env.example
+backend/.env.example
+
+# Agentic Files
+.agents/rules/guide.md
+skills-lock.json
