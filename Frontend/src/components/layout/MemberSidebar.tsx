@@ -51,15 +51,15 @@ export function MemberSidebar({ className }: { className?: string }) {
       <div className="flex items-center justify-between p-5 h-16">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
-              <User className="size-5 text-primary-foreground" />
+            <div className="size-8 rounded-lg flex items-center justify-center">
+              <img src="/logo_gym.png" alt="Gym Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-gradient">IRON MEMBER</span>
+            <span className="font-bold text-xl tracking-tight text-gradient">NFH MEMBER</span>
           </div>
         )}
         {collapsed && (
-          <div className="size-8 rounded-lg bg-primary mx-auto flex items-center justify-center">
-            <User className="size-5 text-primary-foreground" />
+          <div className="size-8 rounded-lg mx-auto flex items-center justify-center">
+            <img src="/logo_gym.png" alt="Gym Logo" className="w-full h-full object-contain" />
           </div>
         )}
       </div>
