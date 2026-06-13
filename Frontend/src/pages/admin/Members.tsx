@@ -143,13 +143,42 @@ export default function UserManagement() {
       return;
     }
 
+    const generateStrongPassword = () => {
+      const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const lower = "abcdefghijklmnopqrstuvwxyz";
+      const num = "0123456789";
+      const sym = "!@#$%^&*()_+";
+      const all = upper + lower + num + sym;
+      let pass = "";
+      pass += upper[Math.floor(Math.random() * upper.length)];
+      pass += lower[Math.floor(Math.random() * lower.length)];
+      pass += num[Math.floor(Math.random() * num.length)];
+      pass += sym[Math.floor(Math.random() * sym.length)];
+      for(let i=0; i<6; i++) {
+        pass += all[Math.floor(Math.random() * all.length)];
+      }
+      return pass;
+    };
+
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     formData.append('sex', sex);
     formData.append('role', 'Member');
     
+    // Ensure password meets Laravel's strict requirements
+    const currentPass = formData.get('password') as string;
+    // Check if the provided password is strong enough, otherwise force a strong one
+    const hasUpper = /[A-Z]/.test(currentPass);
+    const hasLower = /[a-z]/.test(currentPass);
+    const hasNum = /[0-9]/.test(currentPass);
+    const hasSym = /[^A-Za-z0-9]/.test(currentPass);
+    const isValid = currentPass.length >= 8 && hasUpper && hasLower && hasNum && hasSym;
+    
+    const finalPass = isValid ? currentPass : generateStrongPassword();
+    formData.set('password', finalPass);
+    formData.set('password_confirmation', finalPass);
+
     // Payment details
-    formData.append('password_confirmation', formData.get('password') as string);
     formData.append('payment_amount', '500');
     formData.append('or_number', `OR-${Date.now()}`);
     formData.append('payment_type', regPaymentMode);
@@ -198,9 +227,12 @@ export default function UserManagement() {
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errors = error.response.data.errors;
-        const firstError = Object.values(errors)[0] as string[];
-        toast.error(firstError?.[0] || "Validation failed.");
+        console.error("Validation Errors 422:", errors);
+        const firstErrorKey = Object.keys(errors)[0];
+        const firstErrorMsg = errors[firstErrorKey][0];
+        toast.error(`Validation failed (${firstErrorKey}): ${firstErrorMsg}`);
       } else {
+        console.error("Server Error:", error.response?.data);
         toast.error(error.response?.data?.message || "Failed to create member");
       }
     } finally {
