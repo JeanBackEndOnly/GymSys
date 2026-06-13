@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { walkinService } from '@/services/walkin.service';
+import { userService } from '@/services/user.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'sonner';
 import { CashierLayout } from '@/components/layout/CashierLayout';
@@ -32,7 +33,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -48,7 +51,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 
-function LogVisitDialog({ profile }: { profile: any }) {
+function LogVisitDialog({ profile, isMember = false }: { profile: any, isMember?: boolean }) {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'gcash' | 'waived'>('cash');
   const [refNum, setRefNum] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -75,8 +78,8 @@ function LogVisitDialog({ profile }: { profile: any }) {
       return;
     }
     recordMutation.mutate({
-      walk_in_id: profile.id,
-      fee_paid: paymentMethod === 'waived' ? 0 : 150,
+      walk_in_id: profile.id, // For UI only, members might not have walk_in_id
+      fee_paid: paymentMethod === 'waived' ? 0 : 60,
       assisted_by: user?.id
     });
   };
@@ -98,7 +101,7 @@ function LogVisitDialog({ profile }: { profile: any }) {
           <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor={`amount-${profile.id}`}>Amount</Label>
-            <Input id={`amount-${profile.id}`} value={paymentMethod === 'waived' ? "₱0.00" : "₱150.00"} readOnly disabled className="bg-white/5 border-white/10 text-muted-foreground" />
+            <Input id={`amount-${profile.id}`} value={paymentMethod === 'waived' ? "₱0.00" : "₱60.00"} readOnly disabled className="bg-white/5 border-white/10 text-muted-foreground" />
           </div>
           <div className="grid gap-2">
             <Label htmlFor={`method-${profile.id}`}>Payment Method</Label>
@@ -152,6 +155,7 @@ export default function CashierWalkins() {
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'gcash' | 'waived'>('cash');
   const [selectedWalkin, setSelectedWalkin] = useState<string>('');
+  const [accountCategory, setAccountCategory] = useState<'member' | 'walkin'>('member');
   const [refNum, setRefNum] = useState('');
   
   const [newFirstname, setNewFirstname] = useState('');
@@ -174,6 +178,13 @@ export default function CashierWalkins() {
     queryKey: ['walkin-attendance'],
     queryFn: walkinService.getWalkinAttendance
   });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: userService.getAllUsers
+  });
+
+  const members = users.filter((u: any) => u.role === 'member');
 
   const recordMutation = useMutation({
     mutationFn: (data: any) => walkinService.recordAttendance(data),
@@ -234,9 +245,11 @@ export default function CashierWalkins() {
       toast.error('Reference number required.');
       return;
     }
+    const [type, id] = selectedWalkin.split('_');
+    const amountDue = accountCategory === 'member' ? 50 : 60;
     recordMutation.mutate({
-      walk_in_id: Number(selectedWalkin),
-      fee_paid: paymentMethod === 'waived' ? 0 : 150,
+      walk_in_id: Number(id),
+      fee_paid: paymentMethod === 'waived' ? 0 : amountDue,
       assisted_by: user?.id
     });
   };
@@ -275,22 +288,40 @@ export default function CashierWalkins() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleRecordPayment} className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="walkin-name">Select Walk-in</Label>
-                    <Select value={selectedWalkin} onValueChange={setSelectedWalkin}>
+                  <div className="grid gap-2 mb-4">
+                    <Label>Account Category</Label>
+                    <Select value={accountCategory} onValueChange={(val: 'member' | 'walkin') => {
+                      setAccountCategory(val);
+                      setSelectedWalkin('');
+                    }}>
                       <SelectTrigger className="bg-white/5 border-white/10">
-                        <SelectValue placeholder="Select an existing walk-in" />
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent className="matte-surface border-white/10">
-                        {profiles.map((p: any) => (
-                          <SelectItem key={p.id} value={p.id.toString()}>{p.firstname} {p.lastname}</SelectItem>
+                        <SelectItem value="member">Existing Member</SelectItem>
+                        <SelectItem value="walkin">Walk-in Profile</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="walkin-name">Select Account</Label>
+                    <Select value={selectedWalkin} onValueChange={setSelectedWalkin}>
+                      <SelectTrigger className="bg-white/5 border-white/10">
+                        <SelectValue placeholder="Select an account" />
+                      </SelectTrigger>
+                      <SelectContent className="matte-surface border-white/10">
+                        {accountCategory === 'member' && members.map((m: any) => (
+                          <SelectItem key={`member_${m.id}`} value={`member_${m.id}`}>{m.firstname} {m.lastname}</SelectItem>
+                        ))}
+                        {accountCategory === 'walkin' && profiles.map((p: any) => (
+                          <SelectItem key={`profile_${p.id}`} value={`profile_${p.id}`}>{p.firstname} {p.lastname}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="amount">Amount</Label>
-                    <Input id="amount" value={paymentMethod === 'waived' ? "₱0.00" : "₱150.00"} readOnly disabled className="bg-white/5 border-white/10 text-muted-foreground" />
+                    <Input id="amount" value={paymentMethod === 'waived' ? "₱0.00" : (accountCategory === 'member' ? "₱50.00" : "₱60.00")} readOnly className="bg-white/5 border-white/10 font-medium text-white" />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="method">Payment Method</Label>
@@ -461,23 +492,23 @@ export default function CashierWalkins() {
           </Card>
         </div>
 
-        <Tabs defaultValue="log" className="w-full">
+        <Tabs defaultValue="members" className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-6 bg-white/5 border border-white/10 rounded-xl p-1">
-            <TabsTrigger value="log" className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">
-              Daily Log
+            <TabsTrigger value="members" className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">
+              Members (Existing)
             </TabsTrigger>
-            <TabsTrigger value="profiles" className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">
-              Profiles
+            <TabsTrigger value="non_members" className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all">
+              Non-Members
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="log" className="mt-0 outline-none">
+          <TabsContent value="members" className="mt-0 outline-none">
             <Card className="glass border-white/5">
               <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-0">
-                <CardTitle>Daily Log</CardTitle>
+                <CardTitle>Existing Members</CardTitle>
                 <div className="relative w-full md:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input placeholder="Search attendance..." className="pl-10 bg-white/5 border-white/10 rounded-xl h-10" />
+                  <Input placeholder="Search members..." className="pl-10 bg-white/5 border-white/10 rounded-xl h-10" />
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
@@ -486,36 +517,36 @@ export default function CashierWalkins() {
                     <TableHeader className="bg-white/5">
                       <TableRow className="border-white/5 hover:bg-transparent">
                         <TableHead className="text-muted-foreground">Name</TableHead>
-                        <TableHead className="text-muted-foreground">Date</TableHead>
-                        <TableHead className="text-muted-foreground">Visits</TableHead>
-                        <TableHead className="text-muted-foreground">Time In</TableHead>
-                        <TableHead className="text-right text-muted-foreground">Fee Paid</TableHead>
+                        <TableHead className="text-muted-foreground">Status</TableHead>
+                        <TableHead className="text-muted-foreground">Date Joined</TableHead>
+                        <TableHead className="text-right text-muted-foreground">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {attendance.map((record: any) => {
-                        const profile: any = profiles.find((p: any) => p.id === record.walk_in_id) || {};
-                        const dateObj = new Date(record.created_at);
-                        return (
-                        <TableRow key={record.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                      {members.map((member: any) => (
+                        <TableRow key={member.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="size-9 border border-white/10">
-                                <AvatarFallback className="bg-white/5 text-xs">{(profile.firstname || 'U').charAt(0)}</AvatarFallback>
+                                <AvatarFallback className="bg-white/5 text-xs">{(member.firstname || 'U').charAt(0)}</AvatarFallback>
                               </Avatar>
-                              <span className="font-medium">{profile.firstname} {profile.lastname}</span>
+                              <span className="font-medium">{member.firstname} {member.lastname}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{dateObj.toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="h-6 text-[10px] bg-white/5 text-muted-foreground border-white/10">
-                              Logged
+                            <Badge variant="outline" className={cn(
+                              "h-6 text-[10px]",
+                              member.status === 'active' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+                            )}>
+                              {member.status === 'active' ? 'Active' : 'Expired/Inactive'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">{dateObj.toLocaleTimeString()}</TableCell>
-                          <TableCell className="text-sm font-medium text-right">₱{(Number(record.fee_paid) || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{new Date(member.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">
+                            <LogVisitDialog profile={member} isMember={true} />
+                          </TableCell>
                         </TableRow>
-                      )})}
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -523,7 +554,7 @@ export default function CashierWalkins() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="profiles" className="mt-0 outline-none">
+          <TabsContent value="non_members" className="mt-0 outline-none">
             <Card className="glass border-white/5">
               <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-0">
                 <CardTitle>Walk-in Profiles</CardTitle>
