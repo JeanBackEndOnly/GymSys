@@ -17,7 +17,7 @@ import {
   Wallet,
   Package,
   UserCog,
-  Activity
+  CircleDashed
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ const menuItems = [
   { icon: Footprints, label: 'Walk-ins', path: '/admin/walk-ins' },
   { icon: Package, label: 'Products', path: '/admin/products' },
   { icon: ShoppingBag, label: 'POS Sales', path: '/admin/pos' },
-  { icon: Activity, label: 'Court Rentals', path: '/admin/court-rentals' },
+  { icon: CircleDashed, label: 'Court Rentals', path: '/admin/court-rentals' },
   { icon: UserCog, label: 'Staff Management', path: '/admin/staff' },
   { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
 ];
