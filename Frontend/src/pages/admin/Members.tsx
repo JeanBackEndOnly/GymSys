@@ -240,7 +240,7 @@ export default function UserManagement() {
     }
   };
 
-  const displayUsers = users.filter(u => u.role !== 'admin');
+  const displayUsers = users.filter(u => u.role?.toLowerCase() === 'member');
   const filteredUsers = displayUsers.filter(u => filter === 'all' || u.status.toLowerCase() === filter);
 
   const getFullName = (u: UserType) => `${u.firstname} ${u.lastname}`;
@@ -277,28 +277,29 @@ export default function UserManagement() {
                 <form className="grid gap-4 py-4" onSubmit={handleSubmit}>
                   <div className={step === 1 ? 'block' : 'hidden'}>
                     <div className="flex flex-col items-center gap-3 mb-4">
-                    <Avatar className="size-20 border border-white/10 bg-white/5">
-                      {photoPreview && <AvatarImage src={photoPreview} alt="Preview" className="object-cover" />}
-                      <AvatarFallback className="bg-transparent"><Camera className="size-8 text-muted-foreground opacity-50" /></AvatarFallback>
-                    </Avatar>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10">
-                        <Camera className="size-3" /> Capture
-                      </Button>
-                      <div>
-                        <Input id="photo-upload-admin" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10"
-                          onClick={() => document.getElementById('photo-upload-admin')?.click()}
-                        >
-                          <Upload className="size-3" /> Upload
-                        </Button>
+                        <Avatar className="size-20 border border-white/10 bg-white/5">
+                          {photoPreview && <AvatarImage src={photoPreview} alt="Preview" className="object-cover" />}
+                          <AvatarFallback className="bg-transparent"><Camera className="size-8 text-muted-foreground opacity-50" /></AvatarFallback>
+                        </Avatar>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" size="sm" className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10">
+                            <Camera className="size-3" /> Capture
+                          </Button>
+                          <div>
+                            <Input id="photo-upload-admin" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10"
+                              onClick={() => document.getElementById('photo-upload-admin')?.click()}
+                            >
+                              <Upload className="size-3" /> Upload
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
