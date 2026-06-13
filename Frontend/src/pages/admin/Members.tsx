@@ -172,7 +172,15 @@ export default function UserManagement() {
       // Immediately approve to activate the user
       const userId = response?.data?.user?.id || response?.user?.id;
       if (userId) {
-        await userService.approveUser(userId);
+        const paymentDetails: any = {
+          payment_type: regPaymentMode,
+          or_number: `OR-${Date.now()}`,
+          payment_amount: 500,
+        };
+        if (regPaymentMode === 'gcash') {
+          paymentDetails.transaction_id = regTransactionId;
+        }
+        await userService.approveUser(userId, paymentDetails);
       }
       
       toast.success("Member account created and registered successfully!");
