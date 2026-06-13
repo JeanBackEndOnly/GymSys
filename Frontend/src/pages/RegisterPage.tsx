@@ -234,47 +234,53 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 reveal-item">
-                <Input
-                  id="first-name"
-                  placeholder="First Name"
-                  value={formData.firstname}
-                  onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
-                  autoComplete="off"
-                  className="h-10 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-colors autofill-dark text-white px-4 font-bold text-sm"
-                />
-                <Input
-                  id="last-name"
-                  placeholder="Last Name"
-                  value={formData.lastname}
-                  onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
-                  autoComplete="off"
-                  className="h-10 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-colors autofill-dark text-white px-4 font-bold text-sm"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 reveal-item">
+                <div className="space-y-1.5">
+                  <Input
+                    id="first-name"
+                    placeholder="First Name"
+                    value={formData.firstname}
+                    onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
+                    autoComplete="off"
+                    className="h-12 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-all autofill-dark text-white px-4 font-semibold text-sm hover:bg-white/10"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Input
+                    id="last-name"
+                    placeholder="Last Name"
+                    value={formData.lastname}
+                    onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
+                    autoComplete="off"
+                    className="h-12 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-all autofill-dark text-white px-4 font-semibold text-sm hover:bg-white/10"
+                  />
+                </div>
               </div>
 
-              <div className="reveal-item">
+              <div className="reveal-item pt-1">
                 <Input
                   id="username"
                   placeholder="Username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   autoComplete="off"
-                  className="h-10 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-colors autofill-dark text-white px-4 font-bold text-sm"
+                  className="h-12 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-all autofill-dark text-white px-4 font-semibold text-sm hover:bg-white/10"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 reveal-item">
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email Address"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  autoComplete="off"
-                  className="h-10 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-colors autofill-dark text-white px-4 font-bold text-sm"
-                />
-                <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 reveal-item">
+                <div className="space-y-1.5">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email Address"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    autoComplete="off"
+                    className="h-12 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-all autofill-dark text-white px-4 font-semibold text-sm hover:bg-white/10"
+                  />
+                </div>
+                <div className="relative space-y-1.5">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -282,16 +288,16 @@ const RegisterPage = () => {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     autoComplete="off"
-                    className="h-10 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-colors autofill-dark text-white px-4 font-bold text-sm pr-10"
+                    className="h-12 bg-white/5 border-white/5 rounded-xl focus:border-white/20 transition-all autofill-dark text-white px-4 font-semibold text-sm pr-11 hover:bg-white/10"
                   />
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)} 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                    className="absolute right-4 top-[24px] -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
-                  <div className="text-[8px] font-medium text-white/40 flex justify-between px-1 mt-1.5 uppercase tracking-wider">
+                  <div className="text-[9px] font-semibold text-white/40 flex justify-between px-1 mt-2 uppercase tracking-wider">
                     <span className={`transition-colors ${hasMinLength ? "text-emerald-500" : ""}`}>8+ chars</span>
                     <span className={`transition-colors ${hasUpper ? "text-emerald-500" : ""}`}>1+ upper</span>
                     <span className={`transition-colors ${hasSymbol ? "text-emerald-500" : ""}`}>1+ symbol</span>
@@ -299,10 +305,10 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 reveal-item">
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-white/40 flex items-center gap-2 border-r border-white/10 pr-2">
-                    <span className="text-white/30 text-xs">+63</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 reveal-item">
+                <div className="relative flex">
+                  <div className="flex items-center justify-center bg-white/5 border-y border-l border-white/5 rounded-l-xl px-4 text-xs font-bold text-white/40 border-r border-r-white/10">
+                    +63
                   </div>
                   <Input
                     id="phone"
@@ -311,17 +317,17 @@ const RegisterPage = () => {
                     onChange={handlePhoneChange}
                     autoComplete="off"
                     placeholder="Phone Number"
-                    className="h-10 bg-white/5 border-white/5 rounded-xl pl-16 focus:border-white/20 transition-colors tracking-[0.1em] font-mono autofill-dark text-white font-bold text-sm"
+                    className="h-12 bg-white/5 border-white/5 rounded-none rounded-r-xl focus:border-white/20 transition-all tracking-[0.15em] font-mono autofill-dark text-white font-semibold text-sm hover:bg-white/10"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setSex('male')}
-                    className={`h-10 rounded-xl border transition-all flex items-center justify-center gap-2 font-bold text-[10px] uppercase tracking-widest ${
+                    className={`h-12 rounded-xl border transition-all flex items-center justify-center gap-2 font-bold text-[11px] uppercase tracking-widest ${
                       sex === 'male' 
-                      ? 'bg-white text-black border-white' 
-                      : 'bg-white/5 border-white/5 text-white/40 hover:border-white/10'
+                      ? 'bg-white text-black border-white shadow-lg shadow-white/10' 
+                      : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:border-white/10 hover:text-white'
                     }`}
                   >
                     Male
@@ -329,10 +335,10 @@ const RegisterPage = () => {
                   <button
                     type="button"
                     onClick={() => setSex('female')}
-                    className={`h-10 rounded-xl border transition-all flex items-center justify-center gap-2 font-bold text-[10px] uppercase tracking-widest ${
+                    className={`h-12 rounded-xl border transition-all flex items-center justify-center gap-2 font-bold text-[11px] uppercase tracking-widest ${
                       sex === 'female' 
-                      ? 'bg-white text-black border-white' 
-                      : 'bg-white/5 border-white/5 text-white/40 hover:border-white/10'
+                      ? 'bg-white text-black border-white shadow-lg shadow-white/10' 
+                      : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:border-white/10 hover:text-white'
                     }`}
                   >
                     Female
@@ -340,29 +346,29 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 reveal-item">
+              <div className="flex items-start space-x-3 pt-3 reveal-item">
                 <Checkbox 
                   id="terms" 
                   checked={termsAccepted}
                   onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
-                  className="mt-0.5 border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black rounded-md size-3.5" 
+                  className="mt-0.5 border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black rounded-md size-4" 
                 />
                 <div className="grid gap-1 leading-none">
                   <label
                     htmlFor="terms"
-                    className="text-[9px] md:text-[10px] text-white/40 font-medium leading-tight cursor-pointer select-none"
+                    className="text-[11px] text-white/50 font-medium leading-tight cursor-pointer select-none"
                   >
-                    I agree to the <span className="text-white hover:underline underline-offset-4">Membership Agreement</span> and consent to renewals.
+                    I agree to the <span className="text-white font-bold hover:underline underline-offset-4">Membership Agreement</span> and consent to renewals.
                   </label>
                 </div>
               </div>
 
-              <div className="pt-2 reveal-item">
-                <Button disabled={isLoading} type="submit" variant="premium" className="w-full h-12 md:h-13 rounded-xl text-base font-black uppercase tracking-tight shadow-2xl shadow-white/5 hover:scale-[1.01] active:scale-[0.99] transition-all">
+              <div className="pt-6 reveal-item">
+                <Button disabled={isLoading} type="submit" variant="premium" className="w-full h-14 rounded-xl text-[13px] font-black uppercase tracking-widest shadow-2xl shadow-white/5 hover:bg-white hover:text-black hover:scale-[1.01] active:scale-[0.99] transition-all">
                   {isLoading ? "Submitting..." : "Submit Application"}
                 </Button>
-                <div className="mt-4 text-center">
-                   <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                <div className="mt-5 text-center">
+                   <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em]">
                      Already a member? <Link to="/login" className="text-white hover:underline underline-offset-4 ml-1">Sign In</Link>
                    </p>
                 </div>
