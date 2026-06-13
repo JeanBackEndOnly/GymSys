@@ -159,6 +159,8 @@ export default function AdminMemberships() {
 
   const [renewUserId, setRenewUserId] = useState<string>('');
   const [renewPlan, setRenewPlan] = useState<string>('regular_1_month');
+  const [hasTrainer, setHasTrainer] = useState<boolean>(false);
+  const [trainerPlan, setTrainerPlan] = useState<string>('trainer_15_days');
   const [openRenewDialogId, setOpenRenewDialogId] = useState<number | null>(null);
 
   const handleRenewSubmit = (e: React.FormEvent) => {
@@ -175,12 +177,14 @@ export default function AdminMemberships() {
     
     if (renewPlan === 'student_1_month') {
       amount = 480;
-    } else if (renewPlan === 'trainer_15_days') {
-      amount = 850;
-      months = 0;
-      days = 15;
-    } else if (renewPlan === 'trainer_1_month') {
-      amount = 1500;
+    }
+
+    if (hasTrainer) {
+      if (trainerPlan === 'trainer_15_days') {
+        amount += 850;
+      } else if (trainerPlan === 'trainer_1_month') {
+        amount += 1500;
+      }
     }
 
     const startDate = new Date();
@@ -193,7 +197,7 @@ export default function AdminMemberships() {
 
     renewMutation.mutate({
       user_id: Number(renewUserId),
-      contract_type: renewPlan,
+      contract_type: hasTrainer ? `${renewPlan}_with_${trainerPlan}` : renewPlan,
       start_date: startDate.toISOString().split('T')[0],
       end_date: endDate.toISOString().split('T')[0],
       payment_type: renewPaymentMode,
@@ -269,10 +273,50 @@ export default function AdminMemberships() {
                       <SelectContent className="matte-surface border-white/10">
                         <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
                         <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
-                        <SelectItem value="trainer_15_days">Trainer Package (₱850/15 days)</SelectItem>
-                        <SelectItem value="trainer_1_month">Trainer Package (₱1,500/1 month)</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div 
+                    className={cn(
+                      "flex flex-col gap-3 p-4 rounded-xl border transition-colors duration-200",
+                      hasTrainer 
+                        ? "border-emerald-500/50 bg-emerald-500/5" 
+                        : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                    )}
+                  >
+                    <label 
+                      htmlFor="has-trainer" 
+                      className="flex items-center space-x-3 cursor-pointer select-none"
+                    >
+                      <Checkbox 
+                        id="has-trainer" 
+                        checked={hasTrainer} 
+                        onCheckedChange={(checked) => setHasTrainer(checked as boolean)}
+                        className={cn(
+                          "border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-black data-[state=checked]:border-emerald-500"
+                        )}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold leading-none">Add Trainer Package</span>
+                        <span className="text-xs text-muted-foreground mt-1">Get personalized 1-on-1 coaching</span>
+                      </div>
+                    </label>
+                    
+                    {hasTrainer && (
+                      <div className="grid gap-2 animate-in fade-in slide-in-from-top-2 pt-3 border-t border-emerald-500/20 mt-1">
+                        <Label htmlFor="trainerPlan" className="text-xs text-emerald-500/80 font-medium">Select Trainer Package</Label>
+                        <Select value={trainerPlan} onValueChange={setTrainerPlan}>
+                          <SelectTrigger className="bg-black/20 border-emerald-500/30 h-10 hover:border-emerald-500/50 focus:ring-emerald-500/50">
+                            <SelectValue placeholder="Select trainer package" />
+                          </SelectTrigger>
+                          <SelectContent className="matte-surface border-emerald-500/20">
+                            <SelectItem value="trainer_15_days" className="focus:bg-emerald-500/10 focus:text-emerald-500">15 Days Package (₱850)</SelectItem>
+                            <SelectItem value="trainer_1_month" className="focus:bg-emerald-500/10 focus:text-emerald-500">1 Month Package (₱1,500)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
 
                   {renewPlan === 'student_1_month' && (
@@ -302,14 +346,23 @@ export default function AdminMemberships() {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-top-1 mt-2">
-                      <Checkbox id="renew-cash-confirm" className="border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black" />
+                      <Checkbox id="renew-cash-confirm" className="border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-black data-[state=checked]:border-emerald-500" required />
                       <Label htmlFor="renew-cash-confirm" className="text-xs font-medium leading-tight cursor-pointer">
                         Did you receive the exact payment in cash?
                       </Label>
                     </div>
                   )}
+
+                  {/* Total Amount Display */}
+                  <div className="flex items-center justify-between p-4 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="font-semibold text-emerald-500/80">Total Amount to Pay:</span>
+                    <span className="text-xl font-bold text-emerald-400">
+                      ₱{(renewPlan === 'student_1_month' ? 480 : 550) + (hasTrainer ? (trainerPlan === 'trainer_15_days' ? 850 : 1500) : 0)}
+                    </span>
+                  </div>
+
                 <DialogFooter>
-                  <Button type="submit" disabled={renewMutation.isPending} className="rounded-xl w-full">
+                  <Button type="submit" disabled={renewMutation.isPending} className="rounded-xl w-full bg-emerald-500 hover:bg-emerald-600 text-black font-semibold">
                     {renewMutation.isPending ? 'Processing...' : 'Process Renewal'}
                   </Button>
                 </DialogFooter>
