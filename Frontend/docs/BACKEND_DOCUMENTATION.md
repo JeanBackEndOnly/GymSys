@@ -84,54 +84,55 @@ To connect the React + Typescript frontend to this backend:
 
 
 --path=api
+  GET|HEAD        / ...................................................... routes/web.php:5
+  POST            api/change-password ................... Api\AuthController@changePassword
+  GET|HEAD        api/contracts .......... contracts.index › Admin\ContractController@index
+  POST            api/contracts .......... contracts.store › Admin\ContractController@store
+  GET|HEAD        api/contracts/{contract} . contracts.show › Admin\ContractController@show
+  PUT|PATCH       api/contracts/{contract} contracts.update › Admin\ContractController@upd…
+  DELETE          api/contracts/{contract} contracts.destroy › Admin\ContractController@de…
+  POST            api/login ...................................... Api\AuthController@login
+  POST            api/logout .................................... Api\AuthController@logout
+  GET|HEAD        api/products ............. products.index › Admin\ProductController@index
+  POST            api/products ............. products.store › Admin\ProductController@store
+  GET|HEAD        api/products-paycheck products-paycheck.index › Admin\ProductPaycheckCon…
+  POST            api/products-paycheck products-paycheck.store › Admin\ProductPaycheckCon…
+  GET|HEAD        api/products-paycheck/{products_paycheck} products-paycheck.show › Admin…
+  PUT|PATCH       api/products-paycheck/{products_paycheck} products-paycheck.update › Adm…
+  DELETE          api/products-paycheck/{products_paycheck} products-paycheck.destroy › Ad…
+  GET|HEAD        api/products/{product} ..... products.show › Admin\ProductController@show
+  PUT|PATCH       api/products/{product} . products.update › Admin\ProductController@update
+  DELETE          api/products/{product} products.destroy › Admin\ProductController@destroy
+  POST            api/register ................................ Api\AuthController@register
+  GET|HEAD        api/reports ................ reports.index › Admin\ReportController@index
+  POST            api/reports ................ reports.store › Admin\ReportController@store
+  GET|HEAD        api/reports/{report} ......... reports.show › Admin\ReportController@show
+  PUT|PATCH       api/reports/{report} ..... reports.update › Admin\ReportController@update
+  DELETE          api/reports/{report} ... reports.destroy › Admin\ReportController@destroy
+  GET|HEAD        api/user .............................................. routes/api.php:24
+  GET|HEAD        api/users ...................... users.index › Admin\UserController@index
+  POST            api/users ...................... users.store › Admin\UserController@store
+  POST            api/users/systemAccount ......... Admin\UserController@storeSystemAccount
+  GET|HEAD        api/users/{user} ................. users.show › Admin\UserController@show
+  PUT|PATCH       api/users/{user} ............. users.update › Admin\UserController@update
+  DELETE          api/users/{user} ........... users.destroy › Admin\UserController@destroy
+  PATCH           api/users/{user}/approve ............... Admin\UserController@approveUser
+  PATCH           api/users/{user}/role ................... Admin\UserController@updateRole
+  GET|HEAD        api/walkins ............ walkins.index › Admin\WalkInInfoController@index
+  POST            api/walkins ............ walkins.store › Admin\WalkInInfoController@store
+  GET|HEAD        api/walkins-attendance walkins-attendance.index › Admin\WalkInAttendance…
+  POST            api/walkins-attendance walkins-attendance.store › Admin\WalkInAttendance…
+  GET|HEAD        api/walkins-attendance/{walkins_attendance} walkins-attendance.show › Ad…
+  PUT|PATCH       api/walkins-attendance/{walkins_attendance} walkins-attendance.update › …
+  DELETE          api/walkins-attendance/{walkins_attendance} walkins-attendance.destroy  …
+  GET|HEAD        api/walkins/{walkin} ..... walkins.show › Admin\WalkInInfoController@show
+  PUT|PATCH       api/walkins/{walkin} . walkins.update › Admin\WalkInInfoController@update
+  DELETE          api/walkins/{walkin} walkins.destroy › Admin\WalkInInfoController@destroy
+  GET|HEAD        sanctum/csrf-cookie sanctum.csrf-cookie › Laravel\Sanctum › CsrfCookieCo…
+  GET|HEAD        storage/{path} storage.local › vendor/laravel/framework/src/Illuminate/F…
+  PUT             storage/{path} storage.local.upload › vendor/laravel/framework/src/Illum…
+  GET|HEAD        up vendor/laravel/framework/src/Illuminate/Foundation/Configuration/Appl…
 
-   GET|HEAD        / ................................................................... routes/web.php:5
-  POST            api/change-password ................................ Api\AuthController@changePassword
-  GET|HEAD        api/contracts ....................... contracts.index › Admin\ContractController@index
-  POST            api/contracts ....................... contracts.store › Admin\ContractController@store
-  GET|HEAD        api/contracts/{contract} .............. contracts.show › Admin\ContractController@show
-  PUT|PATCH       api/contracts/{contract} .......... contracts.update › Admin\ContractController@update
-  DELETE          api/contracts/{contract} ........ contracts.destroy › Admin\ContractController@destroy
-  POST            api/login ................................................... Api\AuthController@login
-  POST            api/logout ................................................. Api\AuthController@logout
-  GET|HEAD        api/products .......................... products.index › Admin\ProductController@index
-  POST            api/products .......................... products.store › Admin\ProductController@store
-  GET|HEAD        api/products-paycheck products-paycheck.index › Admin\ProductPaycheckController@index
-  POST            api/products-paycheck products-paycheck.store › Admin\ProductPaycheckController@store
-  GET|HEAD        api/products-paycheck/{products_paycheck} products-paycheck.show › Admin\ProductPaych…
-  PUT|PATCH       api/products-paycheck/{products_paycheck} products-paycheck.update › Admin\ProductPay…
-  DELETE          api/products-paycheck/{products_paycheck} products-paycheck.destroy › Admin\ProductPa…
-  GET|HEAD        api/products/{product} .................. products.show › Admin\ProductController@show
-  PUT|PATCH       api/products/{product} .............. products.update › Admin\ProductController@update
-  DELETE          api/products/{product} ............ products.destroy › Admin\ProductController@destroy
-  POST            api/register ............................................. Api\AuthController@register
-  GET|HEAD        api/reports ............................. reports.index › Admin\ReportController@index
-  POST            api/reports ............................. reports.store › Admin\ReportController@store
-  GET|HEAD        api/reports/{report} ...................... reports.show › Admin\ReportController@show
-  PUT|PATCH       api/reports/{report} .................. reports.update › Admin\ReportController@update
-  DELETE          api/reports/{report} ................ reports.destroy › Admin\ReportController@destroy
-  GET|HEAD        api/user ........................................................... routes/api.php:24
-  GET|HEAD        api/users ................................... users.index › Admin\UserController@index
-  POST            api/users ................................... users.store › Admin\UserController@store
-  GET|HEAD        api/users/{user} .............................. users.show › Admin\UserController@show
-  PUT|PATCH       api/users/{user} .......................... users.update › Admin\UserController@update
-  DELETE          api/users/{user} ........................ users.destroy › Admin\UserController@destroy
-  PATCH           api/users/{user}/approve ............................ Admin\UserController@approveUser
-  PATCH           api/users/{user}/role ................................ Admin\UserController@updateRole
-  GET|HEAD        api/walkins ......................... walkins.index › Admin\WalkInInfoController@index
-  POST            api/walkins ......................... walkins.store › Admin\WalkInInfoController@store
-  GET|HEAD        api/walkins-attendance walkins-attendance.index › Admin\WalkInAttendanceController@in…
-  POST            api/walkins-attendance walkins-attendance.store › Admin\WalkInAttendanceController@st…
-  GET|HEAD        api/walkins-attendance/{walkins_attendance} walkins-attendance.show › Admin\WalkInAtt…
-  PUT|PATCH       api/walkins-attendance/{walkins_attendance} walkins-attendance.update › Admin\WalkInA…
-  DELETE          api/walkins-attendance/{walkins_attendance} walkins-attendance.destroy › Admin\WalkIn…
-  GET|HEAD        api/walkins/{walkin} .................. walkins.show › Admin\WalkInInfoController@show
-  PUT|PATCH       api/walkins/{walkin} .............. walkins.update › Admin\WalkInInfoController@update
-  DELETE          api/walkins/{walkin} ............ walkins.destroy › Admin\WalkInInfoController@destroy
-  GET|HEAD        sanctum/csrf-cookie sanctum.csrf-cookie › Laravel\Sanctum › CsrfCookieController@show
-  GET|HEAD        storage/{path} storage.local › vendor/laravel/framework/src/Illuminate/Filesystem/Fil…
-  PUT             storage/{path} storage.local.upload › vendor/laravel/framework/src/Illuminate/Filesys…
-  GET|HEAD        up vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilde…
 
 
      
