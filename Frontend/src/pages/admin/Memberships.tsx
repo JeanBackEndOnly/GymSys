@@ -158,7 +158,7 @@ export default function AdminMemberships() {
   });
 
   const [renewUserId, setRenewUserId] = useState<string>('');
-  const [renewPlan, setRenewPlan] = useState<string>('1_month');
+  const [renewPlan, setRenewPlan] = useState<string>('regular_1_month');
   const [openRenewDialogId, setOpenRenewDialogId] = useState<number | null>(null);
 
   const handleRenewSubmit = (e: React.FormEvent) => {
@@ -169,14 +169,27 @@ export default function AdminMemberships() {
     }
     
     // Determine amount based on plan
-    let amount = 1500;
+    let amount = 550;
     let months = 1;
-    if (renewPlan === '3_months') { amount = 4000; months = 3; }
-    if (renewPlan === '1_year') { amount = 15000; months = 12; }
+    let days = 0;
+    
+    if (renewPlan === 'student_1_month') {
+      amount = 480;
+    } else if (renewPlan === 'trainer_15_days') {
+      amount = 850;
+      months = 0;
+      days = 15;
+    } else if (renewPlan === 'trainer_1_month') {
+      amount = 1500;
+    }
 
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + months);
+    if (months > 0) {
+      endDate.setMonth(endDate.getMonth() + months);
+    } else if (days > 0) {
+      endDate.setDate(endDate.getDate() + days);
+    }
 
     renewMutation.mutate({
       user_id: Number(renewUserId),
@@ -254,12 +267,21 @@ export default function AdminMemberships() {
                         <SelectValue placeholder="Select contract duration" />
                       </SelectTrigger>
                       <SelectContent className="matte-surface border-white/10">
-                        <SelectItem value="1_month">Monthly (₱1,500)</SelectItem>
-                        <SelectItem value="3_months">Quarterly (₱4,000)</SelectItem>
-                        <SelectItem value="1_year">Yearly (₱15,000)</SelectItem>
+                        <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
+                        <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
+                        <SelectItem value="trainer_15_days">Trainer Package (₱850/15 days)</SelectItem>
+                        <SelectItem value="trainer_1_month">Trainer Package (₱1,500/1 month)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {renewPlan === 'student_1_month' && (
+                    <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
+                      <Label>Student Valid ID (Photo) <span className="text-destructive">*</span></Label>
+                      <Input type="file" accept="image/*" className="bg-white/5 border-white/10 file:text-white file:bg-white/10 file:border-0 file:rounded-md file:px-4 file:py-2 file:mr-4 file:hover:bg-white/20 cursor-pointer" required />
+                    </div>
+                  )}
+
                   <div className="grid gap-2">
                     <Label htmlFor="method">Payment Method</Label>
                     <Select defaultValue="cash" onValueChange={setRenewPaymentMode}>
@@ -737,10 +759,19 @@ export default function AdminMemberships() {
                                 </DialogHeader>
                                 <form onSubmit={(e) => {
                                   e.preventDefault();
-                                  let amount = 1500;
+                                  let amount = 550;
                                   let months = 1;
-                                  if (renewPlan === '3_months') { amount = 4000; months = 3; }
-                                  if (renewPlan === '1_year') { amount = 15000; months = 12; }
+                                  let days = 0;
+                                  
+                                  if (renewPlan === 'student_1_month') {
+                                    amount = 480;
+                                  } else if (renewPlan === 'trainer_15_days') {
+                                    amount = 850;
+                                    months = 0;
+                                    days = 15;
+                                  } else if (renewPlan === 'trainer_1_month') {
+                                    amount = 1500;
+                                  }
                                   
                                   const txInput = document.getElementById(`renew-tx-${record.id}`) as HTMLInputElement;
 
@@ -753,7 +784,11 @@ export default function AdminMemberships() {
 
                                   const startDate = new Date();
                                   const endDate = new Date();
-                                  endDate.setMonth(endDate.getMonth() + months);
+                                  if (months > 0) {
+                                    endDate.setMonth(endDate.getMonth() + months);
+                                  } else if (days > 0) {
+                                    endDate.setDate(endDate.getDate() + days);
+                                  }
 
                                   renewMutation.mutate({
                                     user_id: record.id,
@@ -783,12 +818,21 @@ export default function AdminMemberships() {
                                           <SelectValue placeholder="Select contract duration" />
                                         </SelectTrigger>
                                         <SelectContent className="matte-surface border-white/10">
-                                          <SelectItem value="1_month">Monthly (₱1,500)</SelectItem>
-                                          <SelectItem value="3_months">Quarterly (₱4,000)</SelectItem>
-                                          <SelectItem value="1_year">Yearly (₱15,000)</SelectItem>
+                                          <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
+                                          <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
+                                          <SelectItem value="trainer_15_days">Trainer Package (₱850/15 days)</SelectItem>
+                                          <SelectItem value="trainer_1_month">Trainer Package (₱1,500/1 month)</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>
+
+                                    {renewPlan === 'student_1_month' && (
+                                      <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
+                                        <Label>Student Valid ID (Photo) <span className="text-destructive">*</span></Label>
+                                        <Input type="file" accept="image/*" className="bg-white/5 border-white/10 file:text-white file:bg-white/10 file:border-0 file:rounded-md file:px-4 file:py-2 file:mr-4 file:hover:bg-white/20 cursor-pointer" required />
+                                      </div>
+                                    )}
+
                                     <div className="grid gap-2">
                                       <Label>Payment Method</Label>
                                       <Select value={renewPaymentMode} onValueChange={setRenewPaymentMode}>
