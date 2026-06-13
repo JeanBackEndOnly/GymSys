@@ -16,6 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { QRScannerModal } from '@/components/QRScannerModal';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
@@ -78,10 +82,7 @@ export default function CashierOverview() {
             <p className="text-muted-foreground mt-1">Manage today's transactions, walk-ins, and renewals.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl gap-2">
-              <QrCode className="size-4" />
-              Scan QR
-            </Button>
+            <QRScannerModal onScan={(result) => toast.success(`Scanned QR: ${result}`)} />
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="rounded-xl gap-2 shadow-lg shadow-primary/20">
