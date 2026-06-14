@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('contract', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('contract_type');
+            $table->enum('contract_type', ['regular_1_month', 'student_1_month']);
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->string('status')->nullable();

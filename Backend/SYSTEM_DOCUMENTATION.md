@@ -207,3 +207,9 @@ A single cron job runs php artisan schedule:run every minute. Once configured, L
 - product_id
 
 ## May bug sa products mamaya kona ayusin
+
+## additional for this system
+# trainers table
+# contract data not addition but changed
+# contract_payment data have addiotion for trainers
+ 
