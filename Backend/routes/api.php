@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\WalkInAttendanceController as AdminWalkInAttendan
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductPaycheckController as AdminProductPaycheckController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\TrainerController as AdminTrainerController;
 // Cashier Controllers
 use App\Http\Controllers\Cashier\UserController as CashierUserController;
 use App\Http\Controllers\Cashier\ContractController as CashierContractController;
@@ -63,6 +64,9 @@ Route::middleware(['auth:sanctum', 'admin', 'active', 'throttle:60,1'])->group(f
 
     // Reports Management 
     Route::apiResource('admin/reports', AdminReportController::class);
+
+    // Trainer Management 
+    Route::apiResource('admin/trainers', AdminTrainerController::class);
 });
 
 // ── Cashier Routes (Cashier role only) ─────────────

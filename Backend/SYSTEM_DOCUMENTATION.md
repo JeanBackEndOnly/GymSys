@@ -213,3 +213,6 @@ A single cron job runs php artisan schedule:run every minute. Once configured, L
 # contract data not addition but changed
 # contract_payment data have addiotion for trainers
  
+ ## copy paste
+ $env:Path = '\php;' + $env:Path
+ cd c:\xampp\htdocs\gymsys\backend
