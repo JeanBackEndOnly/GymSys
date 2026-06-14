@@ -64,17 +64,17 @@ export const productService = {
   // ==================== PRODUCT CRUD ====================
   
   async getAllProducts(): Promise<Product[]> {
-    const response = await api.get('/products');
+    const response = await api.get('admin/products');
     return response.data?.data || response.data || [];
   },
 
   async createProduct(data: Partial<Product>): Promise<Product> {
-    const response = await api.post('/products', data);
+    const response = await api.post('admin/products', data);
     return response.data?.data || response.data;
   },
 
   async createProductWithImage(formData: FormData): Promise<Product> {
-    const response = await api.post('/products', formData, {
+    const response = await api.post('admin/products', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -83,12 +83,12 @@ export const productService = {
   },
 
   async updateProduct(id: number, data: Partial<Product>): Promise<Product> {
-    const response = await api.put(`/products/${id}`, data);
+    const response = await api.put(`admin/products/${id}`, data);
     return response.data?.data || response.data;
   },
 
   async updateProductWithImage(id: number, formData: FormData): Promise<Product> {
-    const response = await api.post(`/products/${id}`, formData, {
+    const response = await api.post(`admin/products/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -97,14 +97,14 @@ export const productService = {
   },
 
   async deleteProduct(id: number): Promise<void> {
-    await api.delete(`/products/${id}`);
+    await api.delete(`admin/products/${id}`);
   },
 
   // ==================== PAYCHECK CRUD ====================
 
   async getPaychecks(): Promise<Paycheck[]> {
     try {
-      const response = await api.get('/products-paycheck');
+      const response = await api.get('admin/products-paycheck');
       const data = response.data?.data || response.data || [];
       return data;
     } catch (error: any) {
@@ -114,21 +114,21 @@ export const productService = {
   },
 
   async submitPaycheck(payload: SubmitPaycheckPayload): Promise<Paycheck> {
-    const response = await api.post('/products-paycheck', payload);
+    const response = await api.post('admin/products-paycheck', payload);
     return response.data?.data || response.data;
   },
 
   async getPaycheckById(id: number): Promise<Paycheck> {
-    const response = await api.get(`/products-paycheck/${id}`);
+    const response = await api.get(`admin/products-paycheck/${id}`);
     return response.data?.data || response.data;
   },
 
   async updatePaycheck(id: number, data: UpdatePaycheckPayload): Promise<Paycheck> {
-    const response = await api.put(`/products-paycheck/${id}`, data);
+    const response = await api.put(`admin/products-paycheck/${id}`, data);
     return response.data?.data || response.data;
   },
 
   async deletePaycheck(id: number): Promise<void> {
-    await api.delete(`/products-paycheck/${id}`);
+    await api.delete(`admin/products-paycheck/${id}`);
   }
 };
