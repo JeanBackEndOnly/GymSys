@@ -72,4 +72,15 @@ class UserPolicy
         }
         return $user->role === 'admin' && $user->id !== $model->id;
     }
+
+    public function archive(User $user, User $model){
+        return $user->role === 'admin';
+
+        return $user->role === 'admin' && $user->id !== $model->id;
+    }
+
+    public function inactive(){
+        return in_array($user->role, ['admin', 'cashier']);
+    }
 }
+

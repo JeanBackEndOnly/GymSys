@@ -301,4 +301,30 @@ class UserController extends Controller
             'message' => $user->firstname . ' approved successfully.',
         ]);
     }
+
+    public function deactivateUser(User $user)
+    {
+        $this->authorize('inactive', $user);
+
+        $user->status = 'inactive';
+        $user->save();  // ← Not update()
+
+        return response()->json([
+            'status' => 1,
+            'message' => $user->firstname . ' approved successfully.',
+        ]);
+    }
+
+    public function archiveUser(User $user)
+    {
+        $this->authorize('archive', $user);
+
+        $user->status = 'archive';
+        $user->save();  // ← Not update()
+
+        return response()->json([
+            'status' => 1,
+            'message' => $user->firstname . ' approved successfully.',
+        ]);
+    }
 }

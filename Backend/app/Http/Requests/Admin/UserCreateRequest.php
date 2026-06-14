@@ -42,7 +42,6 @@ class UserCreateRequest extends FormRequest
             'password'   => [
                 'required',
                 'string',
-                'confirmed',
                 Password::min(8)
                     ->mixedCase()
                     ->symbols(),

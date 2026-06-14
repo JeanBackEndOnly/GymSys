@@ -47,7 +47,7 @@ class ProductPaycheckService
             }
             
             $availableStock = $product->quantity;
-            if ($availableStock < $item['quantity']) {
+            if ($availableStock < $item['quantity'] || $product->quantity == 0) {
                 throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, Requested: {$item['quantity']}");
             }
             

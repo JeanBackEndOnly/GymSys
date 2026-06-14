@@ -15,12 +15,16 @@ class RegisterService
         return DB::transaction(function () use ($data, $profileImage) {
             $data['password'] = Hash::make($data['password']);
             $data['qr_code'] = 'QR-' . \Illuminate\Support\Str::uuid();
-            
+
             if ($profileImage) {
                 $data['profile'] = $profileImage->store('profiles', 'public');
             }
 
             $user = User::create($data);
+
+            $user->status = 'active';
+            $user->save();
+
             
             $user->membership_fee()->create([
                 'user_id' => $user->id,
@@ -30,6 +34,10 @@ class RegisterService
                 'transaction_id' => $data['transaction_id'] ?? null,
                 'paid_at' => now(),
             ]);
+
+            $membershipFee = $user->membership_fee;
+            $membershipFee->payment_status = 'paid';
+            $membershipFee->save();
             
             $isAdminLoggedIn = auth('sanctum')->check() && auth('sanctum')->user()->isAdmin();
         
