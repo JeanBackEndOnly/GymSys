@@ -52,4 +52,5 @@ backend/.env.example
 
 # Agentic Files
 .agents/rules/guide.md
+guide.md
 skills-lock.json

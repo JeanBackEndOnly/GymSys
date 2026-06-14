@@ -70,6 +70,7 @@ export default function CashierMemberships() {
   const [renewPaymentMode, setRenewPaymentMode] = useState('cash');
   const [renewTransactionId, setRenewTransactionId] = useState('');
   const [regTransactionId, setRegTransactionId] = useState('');
+  const [renewPlan, setRenewPlan] = useState('regular_1_month');
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -124,17 +125,26 @@ export default function CashierMemberships() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="plan">New Contract Plan</Label>
-                    <Select>
+                    <Select value={renewPlan} onValueChange={setRenewPlan}>
                       <SelectTrigger className="bg-white/5 border-white/10">
                         <SelectValue placeholder="Select contract duration" />
                       </SelectTrigger>
                       <SelectContent className="matte-surface border-white/10">
-                        <SelectItem value="monthly">Monthly (₱1,500)</SelectItem>
-                        <SelectItem value="quarterly">Quarterly (₱4,000)</SelectItem>
-                        <SelectItem value="yearly">Yearly (₱15,000)</SelectItem>
+                        <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
+                        <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
+                        <SelectItem value="trainer_15_days">Trainer Package (₱850/15 days)</SelectItem>
+                        <SelectItem value="trainer_1_month">Trainer Package (₱1,500/1 month)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {renewPlan === 'student_1_month' && (
+                    <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
+                      <Label>Student Valid ID (Photo) <span className="text-destructive">*</span></Label>
+                      <Input type="file" accept="image/*" className="bg-white/5 border-white/10 file:text-white file:bg-white/10 file:border-0 file:rounded-md file:px-4 file:py-2 file:mr-4 file:hover:bg-white/20 cursor-pointer" required />
+                    </div>
+                  )}
+
                   <div className="grid gap-2">
                     <Label htmlFor="method">Payment Method</Label>
                     <Select defaultValue="cash" onValueChange={setRenewPaymentMode}>
@@ -434,17 +444,26 @@ export default function CashierMemberships() {
                                   </div>
                                   <div className="grid gap-2">
                                     <Label htmlFor={`plan-${record.id}`}>New Contract Plan</Label>
-                                    <Select>
+                                    <Select value={renewPlan} onValueChange={setRenewPlan}>
                                       <SelectTrigger className="bg-white/5 border-white/10">
                                         <SelectValue placeholder="Select contract duration" />
                                       </SelectTrigger>
                                       <SelectContent className="matte-surface border-white/10">
-                                        <SelectItem value="monthly">Monthly (₱1,500)</SelectItem>
-                                        <SelectItem value="quarterly">Quarterly (₱4,000)</SelectItem>
-                                        <SelectItem value="yearly">Yearly (₱15,000)</SelectItem>
+                                        <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
+                                        <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
+                                        <SelectItem value="trainer_15_days">Trainer Package (₱850/15 days)</SelectItem>
+                                        <SelectItem value="trainer_1_month">Trainer Package (₱1,500/1 month)</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
+
+                                  {renewPlan === 'student_1_month' && (
+                                    <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
+                                      <Label>Student Valid ID (Photo) <span className="text-destructive">*</span></Label>
+                                      <Input type="file" accept="image/*" className="bg-white/5 border-white/10 file:text-white file:bg-white/10 file:border-0 file:rounded-md file:px-4 file:py-2 file:mr-4 file:hover:bg-white/20 cursor-pointer" required />
+                                    </div>
+                                  )}
+
                                   <div className="grid gap-2">
                                     <Label>Payment Method</Label>
                                     <Select defaultValue="cash" onValueChange={setRenewPaymentMode}>

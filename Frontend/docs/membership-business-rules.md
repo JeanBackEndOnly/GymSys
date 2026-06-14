@@ -27,6 +27,11 @@ A **Membership** is a one-time registration fee required for a user to officiall
 * Required before any contract activation
 * Created only during first registration
 
+## Membership Types
+
+* **Regular Member:** Standard membership requiring basic details.
+* **Student Member:** Requires upload or capture of a Valid Student ID during registration/contract creation.
+
 ## Example
 
 ```txt
@@ -86,6 +91,33 @@ Start Date: Jan 1, 2026
 End Date: Feb 1, 2026
 Status: Active
 ```
+
+---
+
+# Walk-ins
+
+## Definition
+
+Walk-ins are users who pay a per-visit fee instead of having an active subscription contract.
+
+## Walk-in Categories
+
+* **Existing Member (Expired):** User has a gym account but no active contract. Fee: ₱50.
+* **Walk-in Profile (Non-member):** User does not have a gym account and registers basic details just for the visit. Fee: ₱60.
+
+---
+
+# Court Rentals
+
+## Definition
+
+A system module allowing users to rent the basketball court on an hourly basis.
+
+## Rules
+
+* Requires booking a specific time slot.
+* Payment is collected physically by Cashier/Admin.
+* Supports both members and walk-ins.
 
 ---
 

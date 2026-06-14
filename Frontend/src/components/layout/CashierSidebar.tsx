@@ -11,7 +11,9 @@ import {
   LogOut,
   ChevronLeft,
   ShieldCheck,
-  Wallet
+  Wallet,
+  CircleDashed,
+  Package
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -25,7 +27,9 @@ const menuItems = [
   { icon: ClipboardCheck, label: 'Attendance', path: '/cashier/attendance' },
   { icon: Wallet, label: 'Payments', path: '/cashier/payments' },
   { icon: Footprints, label: 'Walk-ins', path: '/cashier/walk-ins' },
-  { icon: ShoppingBag, label: 'POS', path: '/cashier/pos' },
+  { icon: Package, label: 'Products', path: '/cashier/products' },
+  { icon: ShoppingBag, label: 'POS Sales', path: '/cashier/pos' },
+  { icon: CircleDashed, label: 'Court Rentals', path: '/cashier/court-rentals' },
 ];
 
 export function CashierSidebar({ className }: { className?: string }) {

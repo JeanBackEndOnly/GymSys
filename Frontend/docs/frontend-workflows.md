@@ -31,9 +31,20 @@ Scan QR
 
 ## Walk-in Flow
 
-Register Walk-in
-→ Payment
+Select Category (Existing Member / Walk-in Profile)
+→ Record Details
+→ Payment (₱50 / ₱60)
 → Attendance Entry
+
+---
+
+## Court Rentals Flow
+
+Select Court / Schedule
+→ Log Renter Details
+→ Payment
+→ Rental Active
+→ Rental Completed
 
 ---
 

@@ -143,13 +143,42 @@ export default function UserManagement() {
       return;
     }
 
+    const generateStrongPassword = () => {
+      const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const lower = "abcdefghijklmnopqrstuvwxyz";
+      const num = "0123456789";
+      const sym = "!@#$%^&*()_+";
+      const all = upper + lower + num + sym;
+      let pass = "";
+      pass += upper[Math.floor(Math.random() * upper.length)];
+      pass += lower[Math.floor(Math.random() * lower.length)];
+      pass += num[Math.floor(Math.random() * num.length)];
+      pass += sym[Math.floor(Math.random() * sym.length)];
+      for(let i=0; i<6; i++) {
+        pass += all[Math.floor(Math.random() * all.length)];
+      }
+      return pass;
+    };
+
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     formData.append('sex', sex);
     formData.append('role', 'Member');
     
+    // Ensure password meets Laravel's strict requirements
+    const currentPass = formData.get('password') as string;
+    // Check if the provided password is strong enough, otherwise force a strong one
+    const hasUpper = /[A-Z]/.test(currentPass);
+    const hasLower = /[a-z]/.test(currentPass);
+    const hasNum = /[0-9]/.test(currentPass);
+    const hasSym = /[^A-Za-z0-9]/.test(currentPass);
+    const isValid = currentPass.length >= 8 && hasUpper && hasLower && hasNum && hasSym;
+    
+    const finalPass = isValid ? currentPass : generateStrongPassword();
+    formData.set('password', finalPass);
+    formData.set('password_confirmation', finalPass);
+
     // Payment details
-    formData.append('password_confirmation', formData.get('password') as string);
     formData.append('payment_amount', '500');
     formData.append('or_number', `OR-${Date.now()}`);
     formData.append('payment_type', regPaymentMode);
@@ -172,7 +201,15 @@ export default function UserManagement() {
       // Immediately approve to activate the user
       const userId = response?.data?.user?.id || response?.user?.id;
       if (userId) {
-        await userService.approveUser(userId);
+        const paymentDetails: any = {
+          payment_type: regPaymentMode,
+          or_number: `OR-${Date.now()}`,
+          payment_amount: 500,
+        };
+        if (regPaymentMode === 'gcash') {
+          paymentDetails.transaction_id = regTransactionId;
+        }
+        await userService.approveUser(userId, paymentDetails);
       }
       
       toast.success("Member account created and registered successfully!");
@@ -190,9 +227,12 @@ export default function UserManagement() {
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errors = error.response.data.errors;
-        const firstError = Object.values(errors)[0] as string[];
-        toast.error(firstError?.[0] || "Validation failed.");
+        console.error("Validation Errors 422:", errors);
+        const firstErrorKey = Object.keys(errors)[0];
+        const firstErrorMsg = errors[firstErrorKey][0];
+        toast.error(`Validation failed (${firstErrorKey}): ${firstErrorMsg}`);
       } else {
+        console.error("Server Error:", error.response?.data);
         toast.error(error.response?.data?.message || "Failed to create member");
       }
     } finally {
@@ -200,7 +240,7 @@ export default function UserManagement() {
     }
   };
 
-  const displayUsers = users.filter(u => u.role !== 'admin');
+  const displayUsers = users.filter(u => u.role?.toLowerCase() === 'member');
   const filteredUsers = displayUsers.filter(u => filter === 'all' || u.status.toLowerCase() === filter);
 
   const getFullName = (u: UserType) => `${u.firstname} ${u.lastname}`;
@@ -237,28 +277,29 @@ export default function UserManagement() {
                 <form className="grid gap-4 py-4" onSubmit={handleSubmit}>
                   <div className={step === 1 ? 'block' : 'hidden'}>
                     <div className="flex flex-col items-center gap-3 mb-4">
-                    <Avatar className="size-20 border border-white/10 bg-white/5">
-                      {photoPreview && <AvatarImage src={photoPreview} alt="Preview" className="object-cover" />}
-                      <AvatarFallback className="bg-transparent"><Camera className="size-8 text-muted-foreground opacity-50" /></AvatarFallback>
-                    </Avatar>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10">
-                        <Camera className="size-3" /> Capture
-                      </Button>
-                      <div>
-                        <Input id="photo-upload-admin" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10"
-                          onClick={() => document.getElementById('photo-upload-admin')?.click()}
-                        >
-                          <Upload className="size-3" /> Upload
-                        </Button>
+                        <Avatar className="size-20 border border-white/10 bg-white/5">
+                          {photoPreview && <AvatarImage src={photoPreview} alt="Preview" className="object-cover" />}
+                          <AvatarFallback className="bg-transparent"><Camera className="size-8 text-muted-foreground opacity-50" /></AvatarFallback>
+                        </Avatar>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" size="sm" className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10">
+                            <Camera className="size-3" /> Capture
+                          </Button>
+                          <div>
+                            <Input id="photo-upload-admin" type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 bg-white/5 border-white/10 rounded-lg text-xs gap-2 hover:bg-white/10"
+                              onClick={() => document.getElementById('photo-upload-admin')?.click()}
+                            >
+                              <Upload className="size-3" /> Upload
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>

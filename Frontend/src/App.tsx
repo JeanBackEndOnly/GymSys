@@ -24,7 +24,9 @@ import CashierPOS from './pages/cashier/POS';
 import CashierAttendance from './pages/cashier/Attendance';
 import CashierPayments from './pages/cashier/Payments';
 import CashierWalkins from './pages/cashier/Walkins';
+import CashierCourtRentals from './pages/cashier/CourtRentals';
 import CashierProfile from './pages/cashier/Profile';
+import AdminCourtRentals from './pages/admin/CourtRentals';
 
 import MemberOverview from './pages/member/Overview';
 import MemberMembership from './pages/member/Membership';
@@ -56,6 +58,7 @@ function App() {
             <Route path="/admin/walk-ins" element={<AdminWalkins />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/pos" element={<AdminPOS />} />
+            <Route path="/admin/court-rentals" element={<AdminCourtRentals />} />
             <Route path="/admin/staff" element={<AdminStaff />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
@@ -71,6 +74,7 @@ function App() {
           <Route path="/cashier/payments" element={<CashierPayments />} />
           <Route path="/cashier/walk-ins" element={<CashierWalkins />} />
           <Route path="/cashier/pos" element={<CashierPOS />} />
+          <Route path="/cashier/court-rentals" element={<CashierCourtRentals />} />
           <Route path="/cashier/profile" element={<CashierProfile />} />
 
           </Route>

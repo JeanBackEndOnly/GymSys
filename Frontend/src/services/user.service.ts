@@ -23,6 +23,11 @@ export const userService = {
     return response.data;
   },
 
+  async createSystemAccount(data: Partial<User> | FormData): Promise<User> {
+    const response = await api.post('/users/systemAccount', data);
+    return response.data;
+  },
+
   async updateUser(id: number, data: Partial<User>): Promise<User> {
     const response = await api.put(`/users/${id}`, data);
     return response.data;

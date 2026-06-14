@@ -36,6 +36,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useQuery } from '@tanstack/react-query';
 import { walkinService } from '@/services/walkin.service';
+import { QRScannerModal } from '@/components/QRScannerModal';
+import { toast } from 'sonner';
 
 export default function AdminAttendance() {
   const { data: walkinAttendances = [], isLoading } = useQuery({
@@ -73,10 +75,7 @@ export default function AdminAttendance() {
               <Calendar className="size-4" />
               History
             </Button>
-            <Button className="rounded-xl gap-2 shadow-lg shadow-primary/20 bg-primary">
-              <QrCode className="size-4" />
-              Scan QR
-            </Button>
+            <QRScannerModal onScan={(result) => toast.success(`Scanned QR: ${result}`)} />
           </div>
         </div>
 

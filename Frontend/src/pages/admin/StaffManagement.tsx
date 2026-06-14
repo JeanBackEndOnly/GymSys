@@ -79,18 +79,7 @@ export default function AdminStaff() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
-      // 1. Create the user (defaults to pending member)
-      const response: any = await authService.register(data);
-      const userId = response.data?.user?.id || response.user?.id;
-      
-      if (userId) {
-        // 2. Automatically approve the user
-        await userService.approveUser(userId);
-        
-        // 3. Update their role (backend only allows setting cashier/staff here, not admin)
-        const targetRole = data.role === 'admin' ? 'cashier' : data.role;
-        await userService.updateRole(userId, targetRole);
-      }
+      const response: any = await userService.createSystemAccount(data);
       return response;
     },
     onSuccess: () => {
@@ -122,10 +111,7 @@ export default function AdminStaff() {
     const formattedData = {
       ...formData,
       contact: formData.contact ? `+63${formData.contact.replace(/\D/g, '')}` : undefined,
-      password_confirmation: formData.password,
-      payment_amount: 0,
-      or_number: 'STAFF-ACCOUNT',
-      payment_type: 'cash'
+      password_confirmation: formData.password
     };
     registerMutation.mutate(formattedData);
   };
@@ -152,7 +138,7 @@ export default function AdminStaff() {
     }
   });
 
-  const staffMembers = users.filter((user: any) => user.role === 'admin' || user.role === 'cashier');
+  const staffMembers = users.filter((user: any) => user.role === 'admin' || user.role === 'cashier' || user.role === 'staff');
 
   return (
     <AdminLayout>
@@ -247,8 +233,8 @@ export default function AdminStaff() {
                         <SelectValue placeholder="Select user role" />
                       </SelectTrigger>
                       <SelectContent className="matte-surface border-white/10">
-                        <SelectItem value="admin">Administrator</SelectItem>
                         <SelectItem value="cashier">Cashier</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -302,6 +288,8 @@ export default function AdminStaff() {
                       <div className="flex items-center gap-2">
                         {staff.role === 'admin' ? (
                           <ShieldCheck className="size-4 text-primary" />
+                        ) : staff.role === 'staff' ? (
+                          <ShieldCheck className="size-4 text-blue-500" />
                         ) : (
                           <UserCog className="size-4 text-emerald-500" />
                         )}
