@@ -9,11 +9,50 @@ import { authService } from '@/services/auth.service';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import { useAuthStore } from '@/store/useAuthStore';
+import { userService } from '@/services/user.service';
+
 export default function AdminProfile() {
+  const { user, setAuth, token } = useAuthStore();
   const [currentPassword, setCurrentPassword] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = React.useState(false);
+  
+  const [isUpdatingProfile, setIsUpdatingProfile] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    firstname: '',
+    lastname: '',
+    email: '',
+    contact: ''
+  });
+
+  React.useEffect(() => {
+    if (user) {
+      setFormData({
+        firstname: user.firstname || '',
+        lastname: user.lastname || '',
+        email: user.email || '',
+        contact: user.contact || ''
+      });
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    try {
+      setIsUpdatingProfile(true);
+      const updatedUser = await userService.updateUser(user.id, formData);
+      if (token) {
+        setAuth(updatedUser, token);
+      }
+      toast.success('Profile updated successfully!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
 
   const handleUpdatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -51,9 +90,13 @@ export default function AdminProfile() {
             <h1 className="text-3xl font-bold tracking-tight text-gradient">My Profile</h1>
             <p className="text-muted-foreground mt-1">Manage your account details and security settings.</p>
           </div>
-          <Button className="rounded-xl gap-2 shadow-lg shadow-primary/20">
+          <Button 
+            className="rounded-xl gap-2 shadow-lg shadow-primary/20"
+            onClick={handleUpdateProfile}
+            disabled={isUpdatingProfile}
+          >
             <Save className="size-4" />
-            Save Profile
+            {isUpdatingProfile ? 'Saving...' : 'Save Profile'}
           </Button>
         </div>
 
@@ -68,10 +111,10 @@ export default function AdminProfile() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6 mb-2">
                   <Avatar className="size-24 border-2 border-primary/20 shadow-xl">
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>AD</AvatarFallback>
+                    <AvatarImage src={user?.profile ? `http://127.0.0.1:8000/storage/${user.profile}` : "https://github.com/shadcn.png"} />
+                    <AvatarFallback>{user?.firstname?.[0] || 'A'}{user?.lastname?.[0] || 'D'}</AvatarFallback>
                   </Avatar>
-                  <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl">
+                  <Button variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 rounded-xl disabled:opacity-50">
                     Change Photo
                   </Button>
                 </div>
@@ -79,22 +122,22 @@ export default function AdminProfile() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="first-name">First Name</Label>
-                    <Input id="first-name" defaultValue="Alex" className="bg-white/5 border-white/10" />
+                    <Input id="first-name" value={formData.firstname} onChange={e => setFormData({...formData, firstname: e.target.value})} className="bg-white/5 border-white/10" />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" defaultValue="Rivera" className="bg-white/5 border-white/10" />
+                    <Input id="last-name" value={formData.lastname} onChange={e => setFormData({...formData, lastname: e.target.value})} className="bg-white/5 border-white/10" />
                   </div>
                 </div>
                 
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" defaultValue="admin@irongym.com" className="bg-white/5 border-white/10" />
+                  <Input id="email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="bg-white/5 border-white/10" />
                 </div>
                 
                 <div className="grid gap-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" defaultValue="+63 912 345 6789" className="bg-white/5 border-white/10 max-w-[50%]" />
+                  <Input id="phone" type="tel" value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})} className="bg-white/5 border-white/10 max-w-[50%]" />
                 </div>
               </CardContent>
             </Card>
@@ -143,7 +186,7 @@ export default function AdminProfile() {
                     <ShieldCheck className="size-8" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">System Administrator</h3>
+                    <h3 className="font-bold text-lg capitalize">{user?.role}</h3>
                     <p className="text-sm text-muted-foreground mt-1">You have full access to all system modules and configuration settings.</p>
                   </div>
                 </div>
