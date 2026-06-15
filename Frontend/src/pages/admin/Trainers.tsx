@@ -134,6 +134,10 @@ export default function AdminTrainers() {
       toast.error('Please fill in required fields');
       return;
     }
+    if (formData.contact && formData.contact.length !== 10) {
+      toast.error('Contact number must be exactly 10 digits.');
+      return;
+    }
     const formattedData = {
       ...formData,
       contact: formData.contact ? `+63${formData.contact.replace(/\D/g, '')}` : undefined,
@@ -240,7 +244,23 @@ export default function AdminTrainers() {
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground flex items-center gap-2 border-r border-white/10 pr-2">
                           <span className="text-xs">+63</span>
                         </div>
-                        <Input id="contact" value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})} placeholder="912 345 6789" className="pl-14 bg-white/5 border-white/10" />
+                        <Input 
+                          id="contact" 
+                          value={formData.contact} 
+                          onChange={e => {
+                            const rawValue = e.target.value.replace(/\D/g, '');
+                            let validatedValue = rawValue;
+                            if (validatedValue.length > 0 && validatedValue[0] !== '9') {
+                              validatedValue = '';
+                            }
+                            if (validatedValue.length > 10) {
+                              validatedValue = validatedValue.slice(0, 10);
+                            }
+                            setFormData({...formData, contact: validatedValue});
+                          }} 
+                          placeholder="912 345 6789" 
+                          className="pl-14 bg-white/5 border-white/10" 
+                        />
                       </div>
                     </div>
                     <div className="grid gap-2">
