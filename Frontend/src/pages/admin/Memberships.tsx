@@ -319,12 +319,7 @@ export default function AdminMemberships() {
                     )}
                   </div>
 
-                  {renewPlan === 'student_1_month' && (
-                    <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
-                      <Label>Student Valid ID (Photo) <span className="text-destructive">*</span></Label>
-                      <Input type="file" accept="image/*" className="bg-white/5 border-white/10 file:text-white file:bg-white/10 file:border-0 file:rounded-md file:px-4 file:py-2 file:mr-4 file:hover:bg-white/20 cursor-pointer" required />
-                    </div>
-                  )}
+
 
                   <div className="grid gap-2">
                     <Label htmlFor="method">Payment Method</Label>
@@ -879,12 +874,7 @@ export default function AdminMemberships() {
                                       </Select>
                                     </div>
 
-                                    {renewPlan === 'student_1_month' && (
-                                      <div className="grid gap-2 animate-in fade-in slide-in-from-top-1">
-                                        <Label>Student Valid ID (Photo) <span className="text-destructive">*</span></Label>
-                                        <Input type="file" accept="image/*" className="bg-white/5 border-white/10 file:text-white file:bg-white/10 file:border-0 file:rounded-md file:px-4 file:py-2 file:mr-4 file:hover:bg-white/20 cursor-pointer" required />
-                                      </div>
-                                    )}
+
 
                                     <div className="grid gap-2">
                                       <Label>Payment Method</Label>
