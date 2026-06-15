@@ -107,3 +107,19 @@ export interface MembershipFee {
   created_at: string;
   updated_at: string;
 }
+
+export interface Trainer {
+  id: number;
+  firstname: string;
+  middlename?: string | null;
+  lastname: string;
+  suffix?: string | null;
+  email?: string | null;
+  contact?: string | null;
+  profile?: string | null;
+  address?: string | null;
+  total_trained?: number | null;
+  sex?: 'male' | 'female' | null;
+  created_at: string;
+  updated_at: string;
+}
