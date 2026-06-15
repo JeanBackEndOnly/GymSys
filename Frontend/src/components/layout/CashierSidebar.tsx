@@ -13,7 +13,9 @@ import {
   ShieldCheck,
   Wallet,
   CircleDashed,
-  Package
+  Package,
+  ChevronDown,
+  Store
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -27,8 +29,14 @@ const menuItems = [
   { icon: ClipboardCheck, label: 'Attendance', path: '/cashier/attendance' },
   { icon: Wallet, label: 'Payments', path: '/cashier/payments' },
   { icon: Footprints, label: 'Walk-ins', path: '/cashier/walk-ins' },
-  { icon: Package, label: 'Products', path: '/cashier/products' },
-  { icon: ShoppingBag, label: 'POS Sales', path: '/cashier/pos' },
+  { 
+    icon: Store, 
+    label: 'Commerce', 
+    subItems: [
+      { icon: Package, label: 'Products', path: '/cashier/products' },
+      { icon: ShoppingBag, label: 'POS Sales', path: '/cashier/pos' },
+    ]
+  },
   { icon: CircleDashed, label: 'Court Rentals', path: '/cashier/court-rentals' },
 ];
 
@@ -38,6 +46,31 @@ export function CashierSidebar({ className }: { className?: string }) {
     const saved = localStorage.getItem('sidebar_collapsed');
     return saved ? JSON.parse(saved) : false;
   });
+
+  const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('cashier_sidebar_open_menus');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    const initial: Record<string, boolean> = {};
+    menuItems.forEach(item => {
+      if (item.subItems && item.subItems.some(sub => window.location.pathname === sub.path)) {
+        initial[item.label] = true;
+      }
+    });
+    return initial;
+  });
+
+  const toggleMenu = (label: string) => {
+    setOpenMenus(prev => {
+      const newState = {
+        ...prev,
+        [label]: !prev[label]
+      };
+      localStorage.setItem('cashier_sidebar_open_menus', JSON.stringify(newState));
+      return newState;
+    });
+  };
 
   const toggleSidebar = () => {
     setCollapsed((prev: boolean) => {
@@ -86,6 +119,72 @@ export function CashierSidebar({ className }: { className?: string }) {
       {/* Navigation Items */}
       <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto slim-scrollbar">
         {menuItems.map((item) => {
+          if (item.subItems) {
+            const isSubItemActive = item.subItems.some(sub => location.pathname === sub.path);
+            const isOpen = openMenus[item.label] || false;
+            
+            return (
+              <div key={item.label} className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    if (collapsed) setCollapsed(false);
+                    toggleMenu(item.label);
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+                    isSubItemActive 
+                      ? "bg-white/5 text-white" 
+                      : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className={cn(
+                      "size-5 transition-colors",
+                      isSubItemActive ? "text-white" : "text-muted-foreground group-hover:text-white"
+                    )} />
+                    {!collapsed && <span className="font-medium">{item.label}</span>}
+                  </div>
+                  {!collapsed && (
+                    <ChevronDown className={cn(
+                      "size-4 transition-transform duration-200",
+                      isOpen && "rotate-180"
+                    )} />
+                  )}
+                </button>
+                
+                {!collapsed && isOpen && (
+                  <div className="pl-10 pr-2 py-1 space-y-1 animate-in slide-in-from-top-2 fade-in duration-200">
+                    {item.subItems.map(sub => {
+                      const isActive = location.pathname === sub.path || (sub.path !== '/cashier' && location.pathname.startsWith(`${sub.path}/`));
+                      return (
+                        <Link key={sub.path} to={sub.path}>
+                          <div
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 relative",
+                              isActive 
+                                ? "bg-white/10 text-white" 
+                                : "text-muted-foreground hover:text-white hover:bg-white/5"
+                            )}
+                          >
+                            <sub.icon className={cn(
+                              "size-4 transition-colors",
+                              isActive ? "text-white" : "text-muted-foreground"
+                            )} />
+                            <span className="font-medium text-sm">{sub.label}</span>
+                            
+                            {isActive && (
+                              <div className="absolute left-0 w-1 h-4 bg-primary rounded-full" />
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           const isActive = location.pathname === item.path || (item.path !== '/cashier' && location.pathname.startsWith(`${item.path}/`));
           return (
             <Link key={item.path} to={item.path}>
