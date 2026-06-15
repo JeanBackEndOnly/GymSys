@@ -17,6 +17,7 @@ import AdminStaff from './pages/admin/StaffManagement';
 import AdminReports from './pages/admin/Reports';
 import AdminSettings from './pages/admin/Settings';
 import AdminProfile from './pages/admin/Profile';
+import AdminTrainers from './pages/admin/Trainers';
 import CashierOverview from './pages/cashier/Overview';
 import CashierMembers from './pages/cashier/Members';
 import CashierMemberships from './pages/cashier/Memberships';
@@ -59,6 +60,7 @@ function App() {
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/pos" element={<AdminPOS />} />
             <Route path="/admin/court-rentals" element={<AdminCourtRentals />} />
+            <Route path="/admin/trainers" element={<AdminTrainers />} />
             <Route path="/admin/staff" element={<AdminStaff />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
