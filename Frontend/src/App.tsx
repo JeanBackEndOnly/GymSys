@@ -42,7 +42,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Toaster position="top-right" />
+        <Toaster position="top-right" duration={3000} />
         <main className="min-h-screen bg-background text-foreground">
         <Routes>
           <Route path="/" element={<LandingPage />} />
