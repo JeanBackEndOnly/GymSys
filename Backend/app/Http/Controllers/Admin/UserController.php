@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -291,6 +292,10 @@ class UserController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+    private function generateQRCode(User $user): string
+    {
+        return 'QR-' . $user->id . '-' . strtoupper(Str::random(6));
     }
     public function disapproveUser(User $user)
     {
