@@ -33,7 +33,12 @@ Route::post('/login', [AuthController::class, 'login'])
 // ── Authenticated Routes (any logged-in user) ──
 Route::middleware(['auth:sanctum', 'active', 'throttle:60,1'])->group(function () {
     Route::get('/user', function (Request $request) {
-        return new UserResource($request->user());
+        return new UserResource(
+            $request->user()->load([
+                'membership_fee', 
+                'contract.payment'  
+            ])
+        );
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
