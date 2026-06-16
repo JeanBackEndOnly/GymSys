@@ -18,7 +18,7 @@ import { LogoutModal } from '@/components/shared/LogoutModal';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/member' },
-  { icon: CreditCard, label: 'Membership', path: '/member/membership' },
+  { icon: CreditCard, label: 'Contracts', path: '/member/membership' },
   { icon: Dumbbell, label: 'Workout Planner', path: '/member/planner' },
   { icon: ClipboardCheck, label: 'Attendance', path: '/member/attendance' },
   { icon: Wallet, label: 'Payments', path: '/member/payments' },
