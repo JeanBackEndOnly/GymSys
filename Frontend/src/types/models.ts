@@ -21,6 +21,8 @@ export interface User {
   icon?: string | null;
   status: Status;
   role: Role;
+  membership_fee?: MembershipFee | null;
+  contract?: Contract | null;
   created_at: string;
   updated_at: string;
 }
