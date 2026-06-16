@@ -165,7 +165,6 @@ export default function AdminCourtRentals() {
                           mode="single"
                           selected={date}
                           onSelect={setDate}
-                          initialFocus
                           className="bg-background text-foreground"
                         />
                       </PopoverContent>
