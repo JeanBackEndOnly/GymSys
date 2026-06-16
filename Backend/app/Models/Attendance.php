@@ -2,26 +2,43 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
-class Attendance extends Model
+class MemberAttendance extends Model
 {
-    protected $table = 'walk_in_attendance';
+    use HasFactory;
 
     protected $fillable = [
         'user_id',
         'time_in',
-        'time_out'
+        'time_out',
     ];
 
-     protected $casts = [
-        'time_in' => 'datetime',
-        'time_out' => 'datetime',
+    protected $casts = [
+        'time_in' => 'datetime:H:i:s',
+        'time_out' => 'datetime:H:i:s',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo{
+    public function user()
+    {
         return $this->belongsTo(User::class);
+    }
+
+    public static function isCheckedIn($userId): bool
+    {
+        return self::where('user_id', $userId)
+            ->whereDate('created_at', now()->toDateString())
+            ->whereNull('time_out')
+            ->exists();
+    }
+
+    public static function getTodayAttendance($userId)
+    {
+        return self::where('user_id', $userId)
+            ->whereDate('created_at', now()->toDateString())
+            ->first();
     }
 }
