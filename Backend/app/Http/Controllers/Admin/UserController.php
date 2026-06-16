@@ -253,7 +253,10 @@ class UserController extends Controller
         try {
             $this->authorize('approve', $user);
             
+            $qrCode = $this->generateQRCode($user);
+            
             $user->status = 'active';
+            $user->qr_code = $qrCode;
             $user->save();
             
             $validated = $request->validated();
