@@ -26,7 +26,7 @@ class EquipmentRequest extends FormRequest
             'equipment_name' => ['required', 'string', 'max:255'],
             'equipment_description' => ['nullable', 'string', 'min:20'],
             'equipment_status' => ['required', 'string', 'in:good,damaged,repair'],
-            'equipment_name' => ['required', 'image', 'mimes:jpg,png,gif,jpeg', 'mac:2040'],
+            'equipment_name' => ['required', 'image', 'mimes:jpg,png,gif,jpeg', 'max:2040'],
         ];
     }
 }
