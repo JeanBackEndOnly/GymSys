@@ -70,8 +70,9 @@ A **Contract** is a renewable subscription that determines a member’s gym acce
 
 * Renewable subscription
 * Only one active contract per member at a time
-* Expired contract disables gym access (e.g., QR attendance)
+* Expired contract disables gym access (e.g., QR attendance is locked and blurred out)
 * Renewal creates a new contract record (does not update old one)
+* Contracts can optionally include a **Trainer Package**, which requires selecting a specific assigned trainer (`trainer_id`).
 
 ## Lifecycle
 
@@ -87,6 +88,8 @@ Select Contract Plan
 
 ```txt
 Contract Type: Monthly
+Trainer Package: 15 Days Package (Optional)
+Assigned Trainer: John Doe (Optional)
 Start Date: Jan 1, 2026
 End Date: Feb 1, 2026
 Status: Active
