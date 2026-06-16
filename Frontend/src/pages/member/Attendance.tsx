@@ -1,6 +1,7 @@
 import React from 'react';
 import { MemberLayout } from '@/components/layout/MemberLayout';
-import { QrCode, Clock, CalendarCheck } from 'lucide-react';
+import { QrCode, Clock, CalendarCheck, Lock } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -21,6 +22,9 @@ const attendanceHistory = [
 ];
 
 export default function MemberAttendance() {
+  const { user } = useAuthStore();
+  const hasActiveContract = user?.contract?.status === 'active';
+
   return (
     <MemberLayout>
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -42,16 +46,41 @@ export default function MemberAttendance() {
             
             <h3 className="font-medium text-white mb-6 z-10 text-lg">Your Access Pass</h3>
             
-            <div className="bg-white p-4 rounded-2xl w-48 h-48 flex items-center justify-center mb-6 z-10 shadow-2xl shadow-primary/20">
-              <QrCode className="size-full text-black" />
-            </div>
-            
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-4 py-1.5 text-sm z-10">
-              Active Member
-            </Badge>
-            <p className="text-xs text-muted-foreground mt-4 z-10">
-              Scans automatically at the turnstile
-            </p>
+            {hasActiveContract ? (
+              <>
+                <div className="bg-white p-4 rounded-2xl w-48 h-48 flex items-center justify-center mb-6 z-10 shadow-2xl shadow-primary/20 overflow-hidden">
+                  {user?.qr_code ? (
+                    <img src={user.qr_code} alt="QR Code" className="w-full h-full object-contain" />
+                  ) : (
+                    <QrCode className="size-full text-black" />
+                  )}
+                </div>
+                
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-4 py-1.5 text-sm z-10">
+                  Active Contract
+                </Badge>
+                <p className="text-xs text-muted-foreground mt-4 z-10 text-center">
+                  Scans automatically at the turnstile
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="relative bg-white/5 p-4 rounded-2xl w-48 h-48 flex items-center justify-center mb-6 z-10 shadow-2xl shadow-primary/20 overflow-hidden">
+                  <QrCode className="size-full text-white/10 blur-sm" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                    <Lock className="size-8 text-rose-500 mb-2" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Locked</span>
+                  </div>
+                </div>
+                
+                <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-4 py-1.5 text-sm z-10">
+                  No Active Contract
+                </Badge>
+                <p className="text-xs text-rose-500/80 mt-4 z-10 text-center">
+                  Purchase a plan at front desk.
+                </p>
+              </>
+            )}
           </Card>
 
           {/* Quick Stats */}
