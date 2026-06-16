@@ -12,7 +12,10 @@ import {
   Package,
   ArrowUpRight,
   Receipt,
-  ShieldCheck
+  ShieldCheck,
+  Dumbbell,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,10 +66,13 @@ import { userService } from '@/services/user.service';
 
 export default function CashierPayments() {
   const [filter, setFilter] = useState('all');
+  const [timeFilter, setTimeFilter] = useState('today');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [transactionType, setTransactionType] = useState('misc');
   const [transactionId, setTransactionId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const queryClient = useQueryClient();
 
   const approveMutation = useMutation({
@@ -94,17 +100,92 @@ export default function CashierPayments() {
   const { data: users = [] } = useQuery({ queryKey: ['cashier-users'], queryFn: () => userService.getAllUsers({ role: 'member' }) });
 
   // Map contracts
-  const contractPayments = contracts.filter((c: any) => c.payment).map((c: any) => ({
-    id: `CTR-${c.id}`,
-    rawId: c.id,
-    or_number: c.payment?.or_number || 'N/A',
-    name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
-    type: c.contract_type === 'renewal' ? 'Renewal' : 'Membership',
-    amount: `₱${Number(c.payment?.payment_amount || 0).toLocaleString()}`,
-    status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
-    date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
-    method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
-  }));
+  const contractPayments = contracts.filter((c: any) => c.payment).flatMap((c: any) => {
+    const totalAmount = Number(c.payment?.payment_amount || 0);
+    const baseType = c.contract_type === 'renewal' ? 'Renewal' : 'Membership';
+    const payments = [];
+
+    // If there's a trainer package or amount is greater than base membership
+    const hasTrainer = c.payment?.trainer_id || c.payment?.trainer_package || totalAmount > 150;
+    
+    if (hasTrainer && totalAmount > 150) {
+      const baseMembership = 150;
+      let trainerFee = 0;
+      
+      const packageStr = String(c.payment?.trainer_package || '').toLowerCase();
+      if (packageStr.includes('850') || totalAmount === 1000) {
+        trainerFee = 850;
+      } else if (packageStr.includes('1500') || totalAmount >= 1650) {
+        trainerFee = 1500;
+      } else {
+        trainerFee = totalAmount - baseMembership; // fallback
+      }
+
+      const otherFees = totalAmount - baseMembership - trainerFee;
+
+      // Base Membership
+      payments.push({
+        id: `CTR-${c.id}-M`,
+        rawId: c.id,
+        or_number: c.payment?.or_number || 'N/A',
+        name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
+        type: baseType,
+        rawAmount: baseMembership,
+        amount: `₱${baseMembership.toLocaleString()}`,
+        status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
+        date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
+        method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
+      });
+
+      // Trainer Package
+      if (trainerFee > 0) {
+        payments.push({
+          id: `CTR-${c.id}-T`,
+          rawId: c.id,
+          or_number: c.payment?.or_number || 'N/A',
+          name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
+          type: 'Trainer Package',
+          rawAmount: trainerFee,
+          amount: `₱${trainerFee.toLocaleString()}`,
+          status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
+          date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
+          method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
+        });
+      }
+
+      // Other Fees
+      if (otherFees > 0) {
+        payments.push({
+          id: `CTR-${c.id}-O`,
+          rawId: c.id,
+          or_number: c.payment?.or_number || 'N/A',
+          name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
+          type: 'Other Fees',
+          rawAmount: otherFees,
+          amount: `₱${otherFees.toLocaleString()}`,
+          status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
+          date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
+          method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
+        });
+      }
+    } else {
+      // Standard Membership Only
+      payments.push({
+        id: `CTR-${c.id}`,
+        rawId: c.id,
+        or_number: c.payment?.or_number || 'N/A',
+        name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
+        type: baseType,
+        rawAmount: totalAmount,
+        amount: `₱${totalAmount.toLocaleString()}`,
+        status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
+        date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
+        method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
+      });
+    }
+
+    return payments;
+  });
 
   // Map walkins
   const walkinPayments = walkins.map((w: any) => ({
@@ -113,6 +194,7 @@ export default function CashierPayments() {
     or_number: 'N/A',
     name: w.walk_in_info ? `${w.walk_in_info.firstname} ${w.walk_in_info.lastname}` : 'Walk-in User',
     type: 'Walk-in',
+    rawAmount: Number(w.fee_paid || 0),
     amount: `₱${Number(w.fee_paid || 0).toLocaleString()}`,
     status: 'Completed',
     date: new Date(w.created_at),
@@ -126,6 +208,7 @@ export default function CashierPayments() {
     or_number: p.or_number || 'N/A',
     name: p.paid_by_name || 'Walk-in Customer',
     type: 'Product',
+    rawAmount: Number(p.total_price || 0),
     amount: `₱${Number(p.total_price || 0).toLocaleString()}`,
     status: p.payment_status === 'paid' ? 'Completed' : 'Pending',
     date: new Date(p.created_at),
@@ -139,6 +222,7 @@ export default function CashierPayments() {
     or_number: u.membership_fee.or_number || 'N/A',
     name: `${u.firstname} ${u.lastname}`,
     type: 'Registration',
+    rawAmount: Number(u.membership_fee.payment_amount || 0),
     amount: `₱${Number(u.membership_fee.payment_amount || 0).toLocaleString()}`,
     status: u.membership_fee.payment_status === 'paid' ? 'Completed' : 'Pending',
     date: u.membership_fee.paid_at ? new Date(u.membership_fee.paid_at) : new Date(u.membership_fee.created_at),
@@ -148,25 +232,63 @@ export default function CashierPayments() {
   // Combine and sort
   const allPayments = [...contractPayments, ...walkinPayments, ...productPayments, ...regFees].sort((a, b) => b.date.getTime() - a.date.getTime());
 
+  // Calculate summaries for today
+  const now = new Date();
+  
+  const isDateInPeriod = (d: Date, period: string) => {
+    if (period === 'all') return true;
+    
+    if (period === 'today') {
+      return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    
+    if (period === 'this-week') {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      return d >= startOfWeek;
+    }
+    
+    if (period === 'this-month') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    
+    return true;
+  };
+  
+  const periodPayments = allPayments.filter(p => isDateInPeriod(p.date, timeFilter) && p.status === 'Completed');
+  const periodRevenue = periodPayments.reduce((sum, p) => sum + p.rawAmount, 0);
+  const periodMemberships = periodPayments.filter(p => p.type === 'Membership' || p.type === 'Renewal' || p.type === 'Registration').reduce((sum, p) => sum + p.rawAmount, 0);
+  const periodWalkins = periodPayments.filter(p => p.type === 'Walk-in').reduce((sum, p) => sum + p.rawAmount, 0);
+  const periodProducts = periodPayments.filter(p => p.type === 'Product').reduce((sum, p) => sum + p.rawAmount, 0);
+  const periodTrainerPackages = periodPayments.filter(p => p.type === 'Trainer Package').reduce((sum, p) => sum + p.rawAmount, 0);
+
   const filteredData = allPayments.filter(p => {
+    const matchesTime = isDateInPeriod(p.date, timeFilter);
     const matchesFilter = 
       filter === 'all' || 
       (filter === 'memberships' && (p.type === 'Membership' || p.type === 'Renewal' || p.type === 'Registration')) ||
       (filter === 'walkins' && p.type === 'Walk-in') ||
-      (filter === 'products' && p.type === 'Product');
+      (filter === 'products' && p.type === 'Product') ||
+      (filter === 'trainers' && p.type === 'Trainer Package');
 
     const matchesSearch = 
       p.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
       p.or_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesFilter && matchesSearch;
+    return matchesTime && matchesFilter && matchesSearch;
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   const getTypeIcon = (type: string) => {
-    if (type === 'Membership' || type === 'Renewal') return <CreditCard className="size-3.5" />;
+    if (type === 'Membership' || type === 'Renewal' || type === 'Registration') return <CreditCard className="size-3.5" />;
     if (type === 'Walk-in') return <Banknote className="size-3.5" />;
     if (type === 'Product') return <Package className="size-3.5" />;
+    if (type === 'Trainer Package') return <Dumbbell className="size-3.5" />;
+    if (type === 'Other Fees') return <MoreHorizontal className="size-3.5" />;
     return <Wallet className="size-3.5" />;
   };
 
@@ -179,6 +301,18 @@ export default function CashierPayments() {
             <p className="text-muted-foreground mt-1">Master ledger for all gym transactions.</p>
           </div>
           <div className="flex items-center gap-3">
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-[140px] bg-white/5 border-white/10 rounded-xl">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent className="matte-surface border-white/10">
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="this-week">This Week</SelectItem>
+                <SelectItem value="this-month">This Month</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="rounded-xl gap-2 shadow-lg shadow-primary/20">
@@ -264,16 +398,20 @@ export default function CashierPayments() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-          <Card className="glass border-white/5 lg:col-span-2">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Revenue (Today)</p>
-                <h3 className="text-3xl font-bold mt-1 text-emerald-500">₱4,650.00</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6">
+          <Card className="glass border-white/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Wallet className="size-4" />
+                <span className="text-sm">
+                  Total Revenue 
+                  {timeFilter === 'today' && ' (Today)'}
+                  {timeFilter === 'this-week' && ' (This Week)'}
+                  {timeFilter === 'this-month' && ' (This Month)'}
+                  {timeFilter === 'all' && ' (All Time)'}
+                </span>
               </div>
-              <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-500">
-                <Wallet className="size-8" />
-              </div>
+              <h3 className="text-xl font-bold text-emerald-500">₱{periodRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             </CardContent>
           </Card>
           <Card className="glass border-white/5">
@@ -282,7 +420,7 @@ export default function CashierPayments() {
                 <CreditCard className="size-4" />
                 <span className="text-sm">Memberships</span>
               </div>
-              <h3 className="text-xl font-bold">₱3,000</h3>
+              <h3 className="text-xl font-bold">₱{periodMemberships.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             </CardContent>
           </Card>
           <Card className="glass border-white/5">
@@ -291,24 +429,43 @@ export default function CashierPayments() {
                 <Banknote className="size-4" />
                 <span className="text-sm">Walk-ins</span>
               </div>
-              <h3 className="text-xl font-bold">₱1,650</h3>
+              <h3 className="text-xl font-bold">₱{periodWalkins.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            </CardContent>
+          </Card>
+          <Card className="glass border-white/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Package className="size-4" />
+                <span className="text-sm">Products</span>
+              </div>
+              <h3 className="text-xl font-bold">₱{periodProducts.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            </CardContent>
+          </Card>
+          <Card className="glass border-white/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Dumbbell className="size-4" />
+                <span className="text-sm">Trainer Packages</span>
+              </div>
+              <h3 className="text-xl font-bold">₱{periodTrainerPackages.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             </CardContent>
           </Card>
         </div>
 
         <Card className="glass border-white/5">
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-0">
-            <Tabs value={filter} onValueChange={setFilter} className="w-full md:w-auto">
-              <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl">
+            <Tabs value={filter} onValueChange={(val) => { setFilter(val); setCurrentPage(1); }} className="w-full md:w-auto">
+              <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl flex-wrap h-auto">
                 <TabsTrigger value="all" className="rounded-lg px-6">All</TabsTrigger>
                 <TabsTrigger value="memberships" className="rounded-lg px-6">Memberships</TabsTrigger>
                 <TabsTrigger value="walkins" className="rounded-lg px-6">Walk-ins</TabsTrigger>
                 <TabsTrigger value="products" className="rounded-lg px-6">Products</TabsTrigger>
+                <TabsTrigger value="trainers" className="rounded-lg px-6">Trainer Packages</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input placeholder="Search OR Number, TRX ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 bg-white/5 border-white/10 rounded-xl h-10" />
+              <Input placeholder="Search OR Number, TRX ID..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} className="pl-10 bg-white/5 border-white/10 rounded-xl h-10" />
             </div>
           </CardHeader>
           <CardContent className="pt-6">
@@ -326,7 +483,7 @@ export default function CashierPayments() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData.map((record) => (
+                  {paginatedData.map((record) => (
                     <TableRow key={record.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
                       <TableCell>
                         <div className="flex flex-col">
@@ -426,9 +583,58 @@ export default function CashierPayments() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredData.length === 0 && (
+                    <TableRow className="border-white/5 hover:bg-transparent">
+                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                        No transactions found
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <p className="text-sm text-muted-foreground">
+                  Showing <span className="text-white font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-white font-medium">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> of <span className="text-white font-medium">{filteredData.length}</span> results
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8 border-white/10 bg-white/5 hover:bg-white/10"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="size-4" />
+                  </Button>
+                  {Array.from({ length: totalPages }).map((_, i) => (
+                    <Button
+                      key={i + 1}
+                      variant={currentPage === i + 1 ? 'default' : 'outline'}
+                      className={cn(
+                        "size-8 p-0 border-white/10",
+                        currentPage !== i + 1 && "bg-white/5 hover:bg-white/10"
+                      )}
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-8 border-white/10 bg-white/5 hover:bg-white/10"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

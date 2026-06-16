@@ -44,6 +44,11 @@ export function QRScannerModal({ onScan, trigger }: QRScannerModalProps) {
                 }
               }}
               onError={(error: any) => {
+                // Ignore AbortErrors that happen when the camera is quickly unmounted
+                if (error?.name === 'AbortError' || error?.message?.includes('play() request was interrupted')) {
+                  return;
+                }
+                
                 console.error("Camera Error:", error);
                 if (error?.name === 'NotAllowedError') {
                   toast.error("Camera permission denied. Please allow camera access in your browser settings.");

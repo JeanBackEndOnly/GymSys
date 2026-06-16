@@ -38,6 +38,7 @@ import { QRScannerModal } from '@/components/QRScannerModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
 import { attendanceService } from '@/services/attendance.service';
+import { contractService } from '@/services/contract.service';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from 'sonner';
 
@@ -89,6 +90,16 @@ export default function AdminOverview() {
     queryFn: () => userService.getAllUsers({ per_page: 1000 })
   });
 
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => contractService.getAllContracts({ per_page: 1000 })
+  });
+
+  const { data: memberAttendances = [] } = useQuery({
+    queryKey: ['member-attendance'],
+    queryFn: () => attendanceService.getAllAttendance()
+  });
+
   const recordAttendanceMutation = useMutation({
     mutationFn: (data: any) => attendanceService.recordAttendance(data),
     onSuccess: () => {
@@ -114,7 +125,9 @@ export default function AdminOverview() {
 
     let status = 'active';
     let message = '';
-    const contract = matchedUser.contract;
+    const userContracts = contracts.filter((c: any) => c.user_id === matchedUser.id);
+    const latestContract = [...userContracts].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    const contract = matchedUser.contract || latestContract;
 
     if (!contract) {
       status = 'newbie';
@@ -138,13 +151,29 @@ export default function AdminOverview() {
 
     setScanResult({ user: matchedUser, status, message });
 
-    const now = new Date();
-    const time_in = now.toISOString().slice(0, 19).replace('T', ' ');
+    if (status === 'active') {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const time_in = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      const todayDate = `${year}-${month}-${day}`;
 
-    recordAttendanceMutation.mutate({
-      user_id: matchedUser.id,
-      time_in: time_in,
-    });
+      const hasScannedToday = memberAttendances.some((att: any) => att.user_id === matchedUser.id && att.date === todayDate);
+
+      if (hasScannedToday) {
+        toast.info("Member has already scanned today.");
+        return;
+      }
+
+      recordAttendanceMutation.mutate({
+        user_id: matchedUser.id,
+        time_in: time_in,
+      });
+    }
   };
 
   return (

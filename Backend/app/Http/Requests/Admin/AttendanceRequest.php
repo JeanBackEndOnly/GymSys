@@ -13,26 +13,23 @@ class AttendanceRequest extends FormRequest
         return auth()->check() && in_array(auth()->user()->role, ['admin', 'cashier']);
     }
 
-    public function rules(): array
+       public function rules(): array
     {
         return [
             'user_id' => ['required', 'exists:users,id'],
             'qr_code' => ['required', 'string'],
-            'time_in' => ['required', 'date_format:H:i:s'],
-            'time_out' => ['nullable', 'date_format:H:i:s', 'after:time_in'],
+            // CHANGE THESE TWO LINES:
+            'time_in' => ['required', 'date_format:Y-m-d H:i:s'],
+            'time_out' => ['nullable', 'date_format:Y-m-d H:i:s', 'after:time_in'],
         ];
     }
 
-    public function messages(): array
+
+       public function messages(): array
     {
         return [
-            'user_id.required' => 'Member is required.',
-            'user_id.exists' => 'Member not found.',
-            'qr_code.required' => 'QR code is required.',
-            'time_in.required' => 'Time in is required.',
-            'time_in.date_format' => 'Invalid time format. Use HH:MM:SS.',
-            'time_out.date_format' => 'Invalid time format. Use HH:MM:SS.',
-            'time_out.after' => 'Time out must be after time in.',
+            'time_in.date_format' => 'Invalid time format. Use YYYY-MM-DD HH:MM:SS.',
+            'time_out.date_format' => 'Invalid time format. Use YYYY-MM-DD HH:MM:SS.',
         ];
     }
 
