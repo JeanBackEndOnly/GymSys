@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
 import { contractService } from '@/services/contract.service';
+import { trainerService } from '@/services/trainer.service';
 import { toast } from 'sonner';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { cn } from '@/lib/utils';
@@ -83,6 +84,11 @@ export default function AdminMemberships() {
     queryFn: () => contractService.getAllContracts()
   });
 
+  const { data: trainers = [] } = useQuery({
+    queryKey: ['admin-trainers'],
+    queryFn: () => trainerService.getAllTrainers()
+  });
+
   const pendingUsers = users.filter((u: any) => u.status === 'pending');
   const activeUsers = users.filter((u: any) => u.status === 'active');
 
@@ -161,6 +167,7 @@ export default function AdminMemberships() {
   const [renewPlan, setRenewPlan] = useState<string>('regular_1_month');
   const [hasTrainer, setHasTrainer] = useState<boolean>(false);
   const [trainerPlan, setTrainerPlan] = useState<string>('trainer_15_days');
+  const [selectedTrainer, setSelectedTrainer] = useState<string>('');
   const [openRenewDialogId, setOpenRenewDialogId] = useState<number | null>(null);
 
   const handleRenewSubmit = (e: React.FormEvent) => {
@@ -197,14 +204,16 @@ export default function AdminMemberships() {
 
     renewMutation.mutate({
       user_id: Number(renewUserId),
-      contract_type: hasTrainer ? `${renewPlan}_with_${trainerPlan}` : renewPlan,
+      contract_type: renewPlan,
       start_date: startDate.toISOString().split('T')[0],
       end_date: endDate.toISOString().split('T')[0],
       payment_type: renewPaymentMode,
       or_number: `OR-${Date.now()}`,
       transaction_id: renewPaymentMode === 'gcash' ? renewTransactionId : undefined,
       contract_amount: amount,
-      payment_amount: amount
+      payment_amount: amount,
+      trainer_id: hasTrainer && selectedTrainer ? Number(selectedTrainer) : undefined,
+      trainer_package: hasTrainer ? trainerPlan : undefined,
     });
   };
 
@@ -241,7 +250,7 @@ export default function AdminMemberships() {
                   Renew Contract
                 </Button>
               </DialogTrigger>
-              <DialogContent className="matte-surface border-white/10 sm:max-w-[425px]">
+              <DialogContent className="matte-surface border-white/10 sm:max-w-[600px]">
                 <DialogHeader>
                   <DialogTitle>Renew Contract</DialogTitle>
                   <DialogDescription>
@@ -249,32 +258,34 @@ export default function AdminMemberships() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleRenewSubmit} className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="member">Select Member</Label>
-                    <Select value={renewUserId} onValueChange={setRenewUserId}>
-                      <SelectTrigger className="bg-white/5 border-white/10">
-                        <SelectValue placeholder="Search member..." />
-                      </SelectTrigger>
-                      <SelectContent className="matte-surface border-white/10">
-                        {activeUsers.map((user: any) => (
-                          <SelectItem key={user.id} value={user.id.toString()}>
-                            {user.firstname} {user.lastname}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="plan">New Contract Plan</Label>
-                    <Select value={renewPlan} onValueChange={setRenewPlan}>
-                      <SelectTrigger className="bg-white/5 border-white/10">
-                        <SelectValue placeholder="Select contract duration" />
-                      </SelectTrigger>
-                      <SelectContent className="matte-surface border-white/10">
-                        <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
-                        <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="member">Select Member</Label>
+                      <Select value={renewUserId} onValueChange={setRenewUserId}>
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="Search member..." />
+                        </SelectTrigger>
+                        <SelectContent className="matte-surface border-white/10">
+                          {activeUsers.map((user: any) => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.firstname} {user.lastname}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="plan">New Contract Plan</Label>
+                      <Select value={renewPlan} onValueChange={setRenewPlan}>
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="Select contract duration" />
+                        </SelectTrigger>
+                        <SelectContent className="matte-surface border-white/10">
+                          <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
+                          <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div 
@@ -304,17 +315,35 @@ export default function AdminMemberships() {
                     </label>
                     
                     {hasTrainer && (
-                      <div className="grid gap-2 animate-in fade-in slide-in-from-top-2 pt-3 border-t border-emerald-500/20 mt-1">
-                        <Label htmlFor="trainerPlan" className="text-xs text-emerald-500/80 font-medium">Select Trainer Package</Label>
-                        <Select value={trainerPlan} onValueChange={setTrainerPlan}>
-                          <SelectTrigger className="bg-black/20 border-emerald-500/30 h-10 hover:border-emerald-500/50 focus:ring-emerald-500/50">
-                            <SelectValue placeholder="Select trainer package" />
-                          </SelectTrigger>
-                          <SelectContent className="matte-surface border-emerald-500/20">
-                            <SelectItem value="trainer_15_days" className="focus:bg-emerald-500/10 focus:text-emerald-500">15 Days Package (₱850)</SelectItem>
-                            <SelectItem value="trainer_1_month" className="focus:bg-emerald-500/10 focus:text-emerald-500">1 Month Package (₱1,500)</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 pt-3 border-t border-emerald-500/20 mt-1">
+                        <div className="grid gap-2">
+                          <Label htmlFor="trainerPlan" className="text-xs text-emerald-500/80 font-medium">Select Trainer Package</Label>
+                          <Select value={trainerPlan} onValueChange={setTrainerPlan}>
+                            <SelectTrigger className="bg-black/20 border-emerald-500/30 h-10 hover:border-emerald-500/50 focus:ring-emerald-500/50">
+                              <SelectValue placeholder="Select trainer package" />
+                            </SelectTrigger>
+                            <SelectContent className="matte-surface border-emerald-500/20">
+                              <SelectItem value="trainer_15_days" className="focus:bg-emerald-500/10 focus:text-emerald-500">15 Days Package (₱850)</SelectItem>
+                              <SelectItem value="trainer_1_month" className="focus:bg-emerald-500/10 focus:text-emerald-500">1 Month Package (₱1,500)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="trainerId" className="text-xs text-emerald-500/80 font-medium">Select Assigned Trainer</Label>
+                          <Select value={selectedTrainer} onValueChange={setSelectedTrainer}>
+                            <SelectTrigger className="bg-black/20 border-emerald-500/30 h-10 hover:border-emerald-500/50 focus:ring-emerald-500/50">
+                              <SelectValue placeholder="Select trainer" />
+                            </SelectTrigger>
+                            <SelectContent className="matte-surface border-emerald-500/20">
+                              {trainers.map((t: any) => (
+                                <SelectItem key={t.id} value={t.id.toString()} className="focus:bg-emerald-500/10 focus:text-emerald-500">
+                                  {t.firstname} {t.lastname}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     )}
                   </div>
