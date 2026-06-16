@@ -64,7 +64,7 @@ class AuthController extends Controller
             if ($user->status !== 'active') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Invalid credentials. Please try again.',
+                    'message' => 'Your account is currently pending approval. Please wait for an administrator to verify your membership.',
                 ], 401);
             }
 
