@@ -23,8 +23,9 @@ Contract Expired
 ## Attendance Flow
 
 Scan QR
-→ Verify Membership Status
-→ Time In
+→ Verify Active Contract Status (NOT just Membership account)
+→ If No Active Contract → Show Lock/Error
+→ If Active Contract → Time In
 → Time Out
 
 ---
