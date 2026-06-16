@@ -4,7 +4,7 @@ import { Trainer } from '@/types/models';
 export const trainerService = {
   getAllTrainers: async () => {
     const response = await api.get('/admin/trainers');
-    return response.data;
+    return response.data?.data || [];
   },
 
   getTrainer: async (id: number) => {
