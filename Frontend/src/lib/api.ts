@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api', // Based on Laravel default serve
+  baseURL: `http://${window.location.hostname}:8000/api`, // Dynamically use the host IP for local network access
   headers: {
     Accept: 'application/json',
   },
