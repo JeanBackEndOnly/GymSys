@@ -2,39 +2,34 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ContractUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return in_array(auth()->user()->role, ['admin', 'cashier']);
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
-   public function rules(): array
+    public function rules(): array
     {
         return [
-            // Contract fields
-            'contract_type' => ['sometimes', 'string', 'in:1_month,3_months,6_months,1_year'],
-            'start_date'    => ['sometimes', 'date'],
-            'end_date'      => ['sometimes', 'date', 'after:start_date'],
-            'status'        => ['sometimes', 'string', 'in:active,inactive,expired'],
+            'user_id' => ['sometimes', 'required', 'exists:users,id'],
+            // FIX: Match database enum values
+            'contract_type' => ['sometimes', 'required', 'string', 'in:regular_1_month,student_1_month'],
+            'start_date' => ['sometimes', 'required', 'date'],
+            'end_date' => ['sometimes', 'required', 'date', 'after:start_date'],
+            'status' => ['nullable', 'string', 'in:active,inactive,expired'],
             
-            // Payment fields
-            'payment_status'  => ['sometimes', 'string', 'in:pending,paid,failed'],
-            'payment_amount'  => ['sometimes', 'numeric', 'min:0'],
-            'payment_type'    => ['sometimes', 'string', 'in:cash,gcash'],
-            'or_number'       => ['nullable', 'string', 'max:255'],
-            'transaction_id'  => ['nullable', 'string', 'max:255'],
+            'trainer_id' => ['nullable', 'integer', 'exists:trainers,id'],
+            'trainer_package' => ['nullable', 'string', 'in:trainer_15_days,trainer_1_month'],
+            
+            'payment_type' => ['sometimes', 'required', 'string', 'in:cash,gcash'],
+            'contract_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'payment_amount' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'or_number' => ['nullable', 'string', 'max:255'],
+            'transaction_id' => ['nullable', 'string', 'max:255'],
+            'payment_status' => ['nullable', 'string', 'in:pending,paid,failed'],
         ];
     }
 }

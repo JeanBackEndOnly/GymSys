@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\ContractUpdateRequest;
 use App\Http\Resources\ContractResource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ContractController extends Controller
 {
@@ -64,10 +65,10 @@ class ContractController extends Controller
     {
         try {
             $validated = $request->validated();
-            $this->authorize('create', [Contract::class, $validated["user_id"]]);
+            
+            $this->authorize('create', Contract::class);
 
             $contract = $this->contractService->create($validated);
-            $contract->load(['user', 'payment']);
             
             return response()->json([
                 'status' => 1,
@@ -75,18 +76,65 @@ class ContractController extends Controller
                 'data' => new ContractResource($contract),
             ], 201);
             
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'You are not authorized to create contracts.'
+            ], 403);
         } catch (\Exception $e) {
-            \Log::error('Contract creation failed', ['error' => $e->getMessage()]);
-            if ($e->getMessage() === 'User has an active contract. Cannot create new contract.') {
+            Log::error('Contract creation failed', ['error' => $e->getMessage()]);
+            
+            $errorMessage = $e->getMessage();
+            if (str_contains($errorMessage, 'User has an active contract') || 
+                str_contains($errorMessage, 'User is not active')) {
                 return response()->json([
                     'status' => 0,
-                    'message' => $e->getMessage()
+                    'message' => $errorMessage
                 ], 422);
             }
-            return response()->json(['message' => 'Server error'], 500);
+            
+            return response()->json([
+                'status' => 0,
+                'message' => 'Server error: ' . $errorMessage
+            ], 500);
         }
     }
 
+    public function update(ContractUpdateRequest $request, $id)
+    {
+        try {
+            $contract = Contract::findOrFail($id);
+            
+            $this->authorize('update', $contract);
+
+            $validated = $request->validated();
+            $updatedContract = $this->contractService->update($contract, $validated);
+            
+            return response()->json([
+                'status' => 1,
+                'message' => 'Contract updated successfully.',
+                'data' => new ContractResource($updatedContract),
+            ], 200);
+            
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'You are not authorized to update this contract.'
+            ], 403);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Contract not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Contract update failed', ['error' => $e->getMessage()]);
+            
+            return response()->json([
+                'status' => 0,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function show(Contract $contract)
     {
@@ -103,39 +151,6 @@ class ContractController extends Controller
             return response()->json([
                 'status' => 0,
                 'message' => 'Failed to fetch Contract. Please try again.',
-            ], 500);
-        }
-    }
-
-    public function update(ContractUpdateRequest $request, Contract $contract)
-    {
-        try {
-            $this->authorize('update', $contract);
-
-            $contract->update($request->validated());
-
-            $paymentData = $request->only([
-                'payment_status',
-                'payment_amount',
-                'payment_type',
-                'or_number',
-                'transaction_id'
-            ]);
-            
-            if (!empty($paymentData) && $contract->payment) {
-                $contract->payment()->update($paymentData);
-            }
-
-            return response()->json([
-                'status' => 1,
-                'message' => 'Contract updated successfully.',
-                'data' => new ContractResource($contract->fresh(['user', 'payment'])),
-            ], 200);
-        } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage()]);
-            return response()->json([
-                'status' => 0,
-                'message' => 'Contract update failed. Please try again.',
             ], 500);
         }
     }

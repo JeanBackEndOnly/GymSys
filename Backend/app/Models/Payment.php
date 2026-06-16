@@ -20,8 +20,15 @@ class Payment extends Model
         'or_number',
         'transaction_id',
         'payment_status',
+        'trainer_id',
+        'trainer_package',
     ];
-
+    protected $casts = [
+        'contract_amount' => 'decimal:2',
+        'payment_amount' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('contract_id')->constrained('contract')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('trainer_id')->constrained('trainers')->onDelete('cascade')->nullable();
+            $table->foreignId('trainer_id')->nullable()->constrained('trainers')->onDelete('cascade');
             $table->enum('trainer_package', ['trainer_15_days', 'trainer_1_month'])->nullable();
             $table->string('payment_type')->nullable();
             $table->decimal('contract_amount', 10, 2);

@@ -21,7 +21,7 @@ class ProductPaycheckResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             
-            // ✅ Include items with their products
+            // Include items with their products
             'items' => ProductSoldResource::collection($this->whenLoaded('items')),
             
             // For backward compatibility (single product)

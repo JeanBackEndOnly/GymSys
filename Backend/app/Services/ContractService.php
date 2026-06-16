@@ -4,33 +4,34 @@ namespace App\Services;
 
 use App\Models\Contract;
 use App\Models\User;
-use App\Http\Requests\Admin\ContractUpdateRequest;
-use App\Http\Resources\ContractResource;
+use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ContractService
 {
     public function create(array $data): Contract
     {
         return DB::transaction(function () use ($data) {
-
-            // Check if user is active
+            // Check if user exists and is active
             $user = User::where('id', $data['user_id'])
                         ->where('status', 'active')
                         ->first();
+            
             if (!$user) {
                 throw new \Exception('User is not active. Cannot create contract.');
             }
 
-            // check if the user has already an active contract
-            $userContract = User::with("contract")->find($data['user_id']);
-            if (!$userContract) {
-                throw new \Exception('User not found.');
-            }
-            if ($userContract->contract && $userContract->contract->status === 'active') {
+            // Check if user already has an active contract
+            $existingContract = Contract::where('user_id', $data['user_id'])
+                                        ->where('status', 'active')
+                                        ->first();
+            
+            if ($existingContract) {
                 throw new \Exception('User has an active contract. Cannot create new contract.');
             }
 
+            // Create contract - WITHOUT trainer fields
             $contract = Contract::create([
                 'user_id' => $data['user_id'],
                 'contract_type' => $data['contract_type'],
@@ -39,38 +40,68 @@ class ContractService
                 'status' => $data['status'] ?? 'active',
             ]);
 
-            $contract->payment()->create([
-                'user_id'          => $data['user_id'],
-                'payment_type'     => $data['payment_type'],
-                'contract_amount'   => $data['contract_amount'],
-                'payment_amount'   => $data['payment_amount'],
-                'or_number'        => $data['or_number'] ?? null,
-                'transaction_id'   => $data['transaction_id'] ?? null,
-                'payment_status'   => $data['payment_status'] ?? 'pending'
-            ]);
+            // Create payment - WITH trainer fields here
+            $paymentData = [
+                'user_id' => $data['user_id'],
+                'payment_type' => $data['payment_type'],
+                'contract_amount' => $data['contract_amount'],
+                'payment_amount' => $data['payment_amount'],
+                'or_number' => $data['or_number'] ?? null,
+                'transaction_id' => $data['transaction_id'] ?? null,
+                'payment_status' => $data['payment_status'] ?? 'pending',
+            ];
 
-            return $contract;
+            // Add trainer fields to payment if they exist
+            if (isset($data['trainer_id'])) {
+                $paymentData['trainer_id'] = $data['trainer_id'];
+            }
+            
+            if (isset($data['trainer_package'])) {
+                $paymentData['trainer_package'] = $data['trainer_package'];
+            }
+
+            $contract->payment()->create($paymentData);
+
+            // Load relationships
+            return $contract->load(['user', 'payment']);
         });
     }
 
-    public function update(ContractUpdateRequest $request, Contract $contract)
+    public function update(Contract $contract, array $data): Contract
     {
-        try {
-            $this->authorize('update', $contract);
+        return DB::transaction(function () use ($contract, $data) {
+            // Update contract fields only
+            $contractData = array_filter([
+                'user_id' => $data['user_id'] ?? $contract->user_id,
+                'contract_type' => $data['contract_type'] ?? $contract->contract_type,
+                'start_date' => $data['start_date'] ?? $contract->start_date,
+                'end_date' => $data['end_date'] ?? $contract->end_date,
+                'status' => $data['status'] ?? $contract->status,
+            ], function ($value) {
+                return !is_null($value);
+            });
+            
+            $contract->update($contractData);
 
-            $contract->update($request->validated());
+            // Update payment - including trainer fields
+            $paymentData = array_filter([
+                'payment_type' => $data['payment_type'] ?? null,
+                'contract_amount' => $data['contract_amount'] ?? null,
+                'payment_amount' => $data['payment_amount'] ?? null,
+                'or_number' => $data['or_number'] ?? null,
+                'transaction_id' => $data['transaction_id'] ?? null,
+                'payment_status' => $data['payment_status'] ?? null,
+                'trainer_id' => $data['trainer_id'] ?? null,
+                'trainer_package' => $data['trainer_package'] ?? null,
+            ], function ($value) {
+                return !is_null($value);
+            });
 
-            return response()->json([
-                'status' => 1,
-                'message' => 'Contract updated successfully.',
-                'data' => new ContractResource($contract->fresh()),
-            ], 200);
-        } catch (\Throwable $e) {
-            \Log::error('Failed', ['error' => $e->getMessage()]);
-            return response()->json([
-                'status' => 0,
-                'message' => 'Contract update failed. Please try again.',
-            ], 500);
-        }
+            if (!empty($paymentData)) {
+                $contract->payment()->update($paymentData);
+            }
+
+            return $contract->fresh()->load(['user', 'payment']);
+        });
     }
 }

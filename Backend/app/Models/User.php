@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\MembershipFee;
 use App\Models\Contract;
 use App\Models\Report;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Hash;
 
 #[Fillable(['firstname',
@@ -63,6 +64,9 @@ class User extends Authenticatable
     }
     public function contract(): HasOne{
         return $this->hasOne(Contract::class);
+    }
+    public function payment(): HasOne{
+        return $this->hasOne(Payment::class);
     }
     public function product_paychecks(): HasMany{
         return $this->hasMany(ProductPaycheck::class);

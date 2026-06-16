@@ -15,7 +15,14 @@ class Contract extends Model
         'contract_type',
         'start_date',
         'end_date',
-        'status'
+        'status',
+        
+    ];
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
     protected $table = 'contract';
     
