@@ -9,9 +9,11 @@ import {
   TrendingUp,
   Activity,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/useAuthStore';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,11 @@ const recentPayments = [
 ];
 
 export default function MemberOverview() {
+  const { user } = useAuthStore();
+  
+  // A user must have an active contract to access their QR code and facility
+  const hasActiveContract = user?.contract?.status === 'active';
+
   return (
     <MemberLayout>
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -52,7 +59,7 @@ export default function MemberOverview() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Welcome back, Alex!</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Welcome back, {user?.firstname || 'Member'}!</h1>
           <p className="text-muted-foreground mt-1">Here is what's happening with your membership today.</p>
         </div>
         
@@ -71,16 +78,39 @@ export default function MemberOverview() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center p-6 space-y-4">
-              <div className="bg-white p-4 rounded-2xl w-48 h-48 flex items-center justify-center">
-                {/* Placeholder for actual QR code image */}
-                <QrCode className="size-32 text-black" />
-              </div>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-4 py-1 text-sm">
-                Membership Active
-              </Badge>
-              <p className="text-sm text-muted-foreground">
-                Code refreshes every 30 seconds for security.
-              </p>
+              {hasActiveContract ? (
+                <>
+                  <div className="bg-white p-4 rounded-2xl w-48 h-48 flex items-center justify-center overflow-hidden">
+                    {user?.qr_code ? (
+                      <img src={user.qr_code} alt="QR Code" className="w-full h-full object-contain" />
+                    ) : (
+                      <QrCode className="size-32 text-black" />
+                    )}
+                  </div>
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-4 py-1 text-sm">
+                    Active Contract
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Code refreshes every 30 seconds for security.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="relative bg-white/5 p-4 rounded-2xl w-48 h-48 flex items-center justify-center overflow-hidden">
+                    <QrCode className="size-32 text-white/10 blur-sm" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                      <Lock className="size-8 text-rose-500 mb-2" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">Locked</span>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-4 py-1 text-sm">
+                    No Active Contract
+                  </Badge>
+                  <p className="text-sm text-rose-500/80">
+                    You do not have an active contract. Please renew or purchase a plan at the front desk.
+                  </p>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -88,29 +118,54 @@ export default function MemberOverview() {
 
       {/* Top Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Membership Status */}
-        <div className="glass-card rounded-2xl p-6 border-l-4 border-l-emerald-500 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <CreditCard className="size-24 -mr-6 -mt-6 transform rotate-12" />
-          </div>
-          <div className="flex items-center gap-3 mb-4 relative z-10">
-            <div className="size-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-              <CheckCircle2 className="size-5 text-emerald-500" />
+        {/* Contract Status */}
+        {hasActiveContract ? (
+          <div className="glass-card rounded-2xl p-6 border-l-4 border-l-emerald-500 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <CreditCard className="size-24 -mr-6 -mt-6 transform rotate-12" />
             </div>
-            <div>
-              <h3 className="font-medium text-white">Membership Status</h3>
-              <p className="text-emerald-500 text-sm font-semibold">Active - Monthly Plan</p>
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className="size-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="size-5 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="font-medium text-white">Contract Status</h3>
+                <p className="text-emerald-500 text-sm font-semibold">Active - Monthly Plan</p>
+              </div>
+            </div>
+            <div className="relative z-10">
+              <div className="text-3xl font-bold text-white tracking-tight mb-1">
+                15 Days
+              </div>
+              <p className="text-sm text-muted-foreground">
+                remaining until renewal on Jun 15, 2026
+              </p>
             </div>
           </div>
-          <div className="relative z-10">
-            <div className="text-3xl font-bold text-white tracking-tight mb-1">
-              15 Days
+        ) : (
+          <div className="glass-card rounded-2xl p-6 border-l-4 border-l-rose-500 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <CreditCard className="size-24 -mr-6 -mt-6 transform rotate-12" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              remaining until renewal on Jun 15, 2026
-            </p>
+            <div className="flex items-center gap-3 mb-4 relative z-10">
+              <div className="size-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
+                <Lock className="size-5 text-rose-500" />
+              </div>
+              <div>
+                <h3 className="font-medium text-white">Contract Status</h3>
+                <p className="text-rose-500 text-sm font-semibold">No Active Plan</p>
+              </div>
+            </div>
+            <div className="relative z-10">
+              <div className="text-3xl font-bold text-white tracking-tight mb-1">
+                Inactive
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Please purchase a plan to use the gym facilities.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Workout Plan */}
         <div className="glass-card rounded-2xl p-6 border border-white/5 relative overflow-hidden group">
