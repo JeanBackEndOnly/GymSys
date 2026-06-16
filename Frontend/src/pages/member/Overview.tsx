@@ -1,4 +1,5 @@
 import React from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { 
   CreditCard, 
   Dumbbell, 
@@ -78,20 +79,21 @@ export default function MemberOverview() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center justify-center p-6 space-y-4">
-              {hasActiveContract ? (
+              {user?.qr_code ? (
                 <>
                   <div className="bg-white p-4 rounded-2xl w-48 h-48 flex items-center justify-center overflow-hidden">
-                    {user?.qr_code ? (
-                      <img src={user.qr_code} alt="QR Code" className="w-full h-full object-contain" />
-                    ) : (
-                      <QrCode className="size-32 text-black" />
-                    )}
+                    <QRCodeSVG 
+                      value={user.qr_code} 
+                      size={160} 
+                      level="H"
+                      includeMargin={false}
+                    />
                   </div>
                   <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-4 py-1 text-sm">
-                    Active Contract
+                    {hasActiveContract ? 'Active Contract' : 'Approved Member'}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
-                    Code refreshes every 30 seconds for security.
+                    Scan this QR code at the front desk.
                   </p>
                 </>
               ) : (
@@ -104,10 +106,10 @@ export default function MemberOverview() {
                     </div>
                   </div>
                   <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-4 py-1 text-sm">
-                    No Active Contract
+                    Pending Approval
                   </Badge>
                   <p className="text-sm text-rose-500/80">
-                    You do not have an active contract. Please renew or purchase a plan at the front desk.
+                    Your QR code has not been generated yet. Please visit the front desk to complete your membership.
                   </p>
                 </>
               )}
@@ -130,16 +132,28 @@ export default function MemberOverview() {
               </div>
               <div>
                 <h3 className="font-medium text-white">Contract Status</h3>
-                <p className="text-emerald-500 text-sm font-semibold">Active - Monthly Plan</p>
+                <p className="text-emerald-500 text-sm font-semibold capitalize">
+                  Active - {user.contract?.contract_type?.replace(/_/g, ' ') || 'Plan'}
+                </p>
               </div>
             </div>
             <div className="relative z-10">
-              <div className="text-3xl font-bold text-white tracking-tight mb-1">
-                15 Days
+              <div className="text-2xl font-bold text-white tracking-tight mb-1">
+                {user.contract?.end_date ? (
+                  `${Math.ceil((new Date(user.contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Days`
+                ) : 'Active'}
               </div>
-              <p className="text-sm text-muted-foreground">
-                remaining until renewal on Jun 15, 2026
+              <p className="text-sm text-muted-foreground mb-3">
+                remaining until renewal on {user.contract?.end_date ? new Date(user.contract.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
               </p>
+              
+              {user.contract?.payment?.trainer_package && (
+                <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/10">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 capitalize px-2 py-0.5">
+                    Trainer: {user.contract.payment.trainer_package.replace(/_/g, ' ')}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         ) : (

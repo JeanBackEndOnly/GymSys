@@ -10,7 +10,8 @@ import {
   MoreHorizontal,
   CheckCircle2,
   Package,
-  ArrowUpRight
+  ArrowUpRight,
+  ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,8 +44,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { contractService } from '@/services/contract.service';
 import { walkinService } from '@/services/walkin.service';
 import { productService } from '@/services/product.service';
@@ -56,6 +66,25 @@ export default function AdminPayments() {
   const [transactionType, setTransactionType] = useState('misc');
   const [transactionId, setTransactionId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const queryClient = useQueryClient();
+
+  const approveMutation = useMutation({
+    mutationFn: async (data: { id: number, type: string }) => {
+      if (data.type === 'Renewal' || data.type === 'Membership') {
+        return contractService.updateContract(data.id, {
+          status: 'active',
+          payment_status: 'paid'
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-contracts'] });
+      toast.success('Payment approved and contract activated!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to approve payment');
+    }
+  });
 
   // Fetch all related data
   const { data: contracts = [] } = useQuery({ queryKey: ['admin-contracts'], queryFn: contractService.getAllContracts });
@@ -65,15 +94,16 @@ export default function AdminPayments() {
   const { data: walkinProfiles = [] } = useQuery({ queryKey: ['admin-walkin-profiles'], queryFn: walkinService.getWalkins });
 
   // Map contracts
-  const contractPayments = contracts.filter((c: any) => c.contract_payment).map((c: any) => ({
+  const contractPayments = contracts.filter((c: any) => c.payment).map((c: any) => ({
     id: `CTR-${c.id}`,
-    or_number: c.contract_payment?.or_number || 'N/A',
+    rawId: c.id,
+    or_number: c.payment?.or_number || 'N/A',
     name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
     type: c.contract_type === 'renewal' ? 'Renewal' : 'Membership',
-    amount: `₱${Number(c.contract_payment?.payment_amount || 0).toLocaleString()}`,
-    status: c.contract_payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
-    date: c.contract_payment?.paid_at ? new Date(c.contract_payment.paid_at) : new Date(c.created_at),
-    method: c.contract_payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
+    amount: `₱${Number(c.payment?.payment_amount || 0).toLocaleString()}`,
+    status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
+    date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
+    method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
   }));
 
   // Map walkins
@@ -81,6 +111,7 @@ export default function AdminPayments() {
     const profile = walkinProfiles.find((p: any) => p.id === w.walk_in_id);
     return {
       id: `WLK-${w.id}`,
+      rawId: w.id,
       or_number: 'N/A',
       name: profile ? `${profile.firstname} ${profile.lastname}` : (w.walk_in_info ? `${w.walk_in_info.firstname} ${w.walk_in_info.lastname}` : 'Walk-in User'),
       type: 'Walk-in',
@@ -94,6 +125,7 @@ export default function AdminPayments() {
   // Map products
   const productPayments = paychecks.map((p: any) => ({
     id: `POS-${p.id}`,
+    rawId: p.id,
     or_number: p.or_number || 'N/A',
     name: p.paid_by_name || 'Walk-in Customer',
     type: 'Product',
@@ -106,6 +138,7 @@ export default function AdminPayments() {
   // Map registration fees
   const regFees = users.filter((u: any) => u.membership_fee).map((u: any) => ({
     id: `REG-${u.membership_fee.id}`,
+    rawId: u.membership_fee.id,
     or_number: u.membership_fee.or_number || 'N/A',
     name: `${u.firstname} ${u.lastname}`,
     type: 'Registration',
@@ -330,9 +363,29 @@ export default function AdminPayments() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="size-8 hover:bg-white/10">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 hover:bg-white/10">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="matte-surface border-white/10 w-48">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/5" />
+                            {record.status === 'Pending' && (record.type === 'Renewal' || record.type === 'Membership') && (
+                              <DropdownMenuItem 
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  approveMutation.mutate({ id: record.rawId, type: record.type });
+                                }} 
+                                className="cursor-pointer gap-2 text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
+                                disabled={approveMutation.isPending}
+                              >
+                                <ShieldCheck className="size-4" /> {approveMutation.isPending ? 'Processing...' : 'Approve Payment'}
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

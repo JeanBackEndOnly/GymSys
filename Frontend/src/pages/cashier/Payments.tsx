@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   Package,
   ArrowUpRight,
-  Receipt
+  Receipt,
+  ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,9 +45,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { contractService } from '@/services/contract.service';
 import { walkinService } from '@/services/walkin.service';
 import { productService } from '@/services/product.service';
@@ -58,6 +67,25 @@ export default function CashierPayments() {
   const [transactionType, setTransactionType] = useState('misc');
   const [transactionId, setTransactionId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const queryClient = useQueryClient();
+
+  const approveMutation = useMutation({
+    mutationFn: async (data: { id: number, type: string }) => {
+      if (data.type === 'Renewal' || data.type === 'Membership') {
+        return contractService.updateContract(data.id, {
+          status: 'active',
+          payment_status: 'paid'
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cashier-contracts'] });
+      toast.success('Payment approved and contract activated!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to approve payment');
+    }
+  });
 
   // Fetch all related data
   const { data: contracts = [] } = useQuery({ queryKey: ['cashier-contracts'], queryFn: contractService.getAllContracts });
@@ -66,20 +94,22 @@ export default function CashierPayments() {
   const { data: users = [] } = useQuery({ queryKey: ['cashier-users'], queryFn: () => userService.getAllUsers({ role: 'member' }) });
 
   // Map contracts
-  const contractPayments = contracts.filter((c: any) => c.contract_payment).map((c: any) => ({
+  const contractPayments = contracts.filter((c: any) => c.payment).map((c: any) => ({
     id: `CTR-${c.id}`,
-    or_number: c.contract_payment?.or_number || 'N/A',
+    rawId: c.id,
+    or_number: c.payment?.or_number || 'N/A',
     name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
     type: c.contract_type === 'renewal' ? 'Renewal' : 'Membership',
-    amount: `₱${Number(c.contract_payment?.payment_amount || 0).toLocaleString()}`,
-    status: c.contract_payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
-    date: c.contract_payment?.paid_at ? new Date(c.contract_payment.paid_at) : new Date(c.created_at),
-    method: c.contract_payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
+    amount: `₱${Number(c.payment?.payment_amount || 0).toLocaleString()}`,
+    status: c.payment?.payment_status === 'paid' ? 'Completed' : 'Pending',
+    date: c.payment?.paid_at ? new Date(c.payment.paid_at) : new Date(c.created_at),
+    method: c.payment?.payment_type === 'gcash' ? 'GCash' : 'Cash'
   }));
 
   // Map walkins
   const walkinPayments = walkins.map((w: any) => ({
     id: `WLK-${w.id}`,
+    rawId: w.id,
     or_number: 'N/A',
     name: w.walk_in_info ? `${w.walk_in_info.firstname} ${w.walk_in_info.lastname}` : 'Walk-in User',
     type: 'Walk-in',
@@ -92,6 +122,7 @@ export default function CashierPayments() {
   // Map products
   const productPayments = paychecks.map((p: any) => ({
     id: `POS-${p.id}`,
+    rawId: p.id,
     or_number: p.or_number || 'N/A',
     name: p.paid_by_name || 'Walk-in Customer',
     type: 'Product',
@@ -104,6 +135,7 @@ export default function CashierPayments() {
   // Map registration fees
   const regFees = users.filter((u: any) => u.membership_fee).map((u: any) => ({
     id: `REG-${u.membership_fee.id}`,
+    rawId: u.membership_fee.id,
     or_number: u.membership_fee.or_number || 'N/A',
     name: `${u.firstname} ${u.lastname}`,
     type: 'Registration',
@@ -326,47 +358,71 @@ export default function CashierPayments() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8 hover:bg-white/10 text-muted-foreground hover:text-white" title="View Receipt">
-                              <Receipt className="size-4" />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 hover:bg-white/10 text-muted-foreground hover:text-white">
+                              <MoreHorizontal className="size-4" />
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px] border-white/10 bg-[#0a0a0a]">
-                            <DialogHeader>
-                              <DialogTitle>Transaction Receipt</DialogTitle>
-                              <DialogDescription>Receipt details for {record.id}</DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                              <div className="flex flex-col items-center justify-center border-b border-white/10 pb-6 mb-2">
-                                <div className="size-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mb-4">
-                                  <CheckCircle2 className="size-6" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="matte-surface border-white/10 w-48">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/5" />
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer gap-2">
+                                  <Receipt className="size-4" /> View Receipt
+                                </DropdownMenuItem>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[425px] border-white/10 bg-[#0a0a0a]">
+                                <DialogHeader>
+                                  <DialogTitle>Transaction Receipt</DialogTitle>
+                                  <DialogDescription>Receipt details for {record.id}</DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="flex flex-col items-center justify-center border-b border-white/10 pb-6 mb-2">
+                                    <div className="size-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mb-4">
+                                      <CheckCircle2 className="size-6" />
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-white">{record.amount}</h3>
+                                    <p className="text-sm text-emerald-500 font-medium mt-1">Payment {record.status}</p>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-y-4 text-sm">
+                                    <div className="text-muted-foreground">Client Name</div>
+                                    <div className="text-right font-medium text-white">{record.name}</div>
+                                    
+                                    <div className="text-muted-foreground">Transaction Type</div>
+                                    <div className="text-right font-medium text-white">{record.type}</div>
+                                    
+                                    <div className="text-muted-foreground">Date & Time</div>
+                                    <div className="text-right font-medium text-white">{record.date.toLocaleString()}</div>
+                                    
+                                    <div className="text-muted-foreground">Payment Method</div>
+                                    <div className="text-right font-medium text-white">{record.method}</div>
+                                  </div>
                                 </div>
-                                <h3 className="text-3xl font-bold text-white">{record.amount}</h3>
-                                <p className="text-sm text-emerald-500 font-medium mt-1">Payment {record.status}</p>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-y-4 text-sm">
-                                <div className="text-muted-foreground">Client Name</div>
-                                <div className="text-right font-medium text-white">{record.name}</div>
-                                
-                                <div className="text-muted-foreground">Transaction Type</div>
-                                <div className="text-right font-medium text-white">{record.type}</div>
-                                
-                                <div className="text-muted-foreground">Date & Time</div>
-                                <div className="text-right font-medium text-white">{record.date.toLocaleString()}</div>
-                                
-                                <div className="text-muted-foreground">Payment Method</div>
-                                <div className="text-right font-medium text-white">{record.method}</div>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button className="w-full rounded-xl bg-white/5 border border-white/10 hover:bg-white/10" variant="outline">
-                                Print Receipt
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                                <DialogFooter>
+                                  <Button className="w-full rounded-xl bg-white/5 border border-white/10 hover:bg-white/10" variant="outline">
+                                    Print Receipt
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+
+                            {record.status === 'Pending' && (record.type === 'Renewal' || record.type === 'Membership') && (
+                              <DropdownMenuItem 
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  approveMutation.mutate({ id: record.rawId, type: record.type });
+                                }} 
+                                className="cursor-pointer gap-2 text-emerald-500 focus:text-emerald-500 focus:bg-emerald-500/10"
+                                disabled={approveMutation.isPending}
+                              >
+                                <ShieldCheck className="size-4" /> {approveMutation.isPending ? 'Processing...' : 'Approve Payment'}
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}

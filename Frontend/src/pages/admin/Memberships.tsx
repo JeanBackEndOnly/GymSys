@@ -134,7 +134,7 @@ export default function AdminMemberships() {
       id: Number(selectedUserId),
       paymentDetails: {
         payment_type: regPaymentMode,
-        transaction_id: regPaymentMode === 'gcash' ? regTransactionId : undefined,
+        transaction_id: regPaymentMode === 'gcash' ? regTransactionId : null,
         or_number: `OR-${Date.now()}`,
         payment_amount: 500
       }
@@ -209,11 +209,11 @@ export default function AdminMemberships() {
       end_date: endDate.toISOString().split('T')[0],
       payment_type: renewPaymentMode,
       or_number: `OR-${Date.now()}`,
-      transaction_id: renewPaymentMode === 'gcash' ? renewTransactionId : undefined,
+      transaction_id: renewPaymentMode === 'gcash' ? renewTransactionId : null,
       contract_amount: amount,
       payment_amount: amount,
-      trainer_id: hasTrainer && selectedTrainer ? Number(selectedTrainer) : undefined,
-      trainer_package: hasTrainer ? trainerPlan : undefined,
+      trainer_id: hasTrainer && selectedTrainer ? Number(selectedTrainer) : null,
+      trainer_package: hasTrainer ? trainerPlan : null,
     });
   };
 
@@ -226,7 +226,7 @@ export default function AdminMemberships() {
     
     // Check if contract OR number or membership fee OR number matches
     const contract = contracts.find((c: any) => c.user?.id === u.id || c.user_id === u.id || c.member === `${u.firstname} ${u.lastname}`.trim());
-    const orMatch = contract?.contract_payment?.or_number?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const orMatch = contract?.payment?.or_number?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     u.membership_fee?.or_number?.toLowerCase().includes(searchQuery.toLowerCase());
     const idMatch = contract?.id?.toString().includes(searchQuery);
 
@@ -624,18 +624,19 @@ export default function AdminMemberships() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {contract?.id ? `CTR-${contract.id.toString().padStart(4, '0')}` : 'N/A'}
-                          </span>
-                          {contract?.contract_payment?.or_number ? (
-                            <span className="font-mono text-xs text-emerald-500/70">
-                              {contract.contract_payment.or_number}
+                          {contract?.payment?.or_number ? (
+                            <span className="font-mono text-sm text-white">
+                              {contract.payment.or_number}
                             </span>
                           ) : record.membership_fee?.or_number ? (
-                            <span className="font-mono text-xs text-emerald-500/70">
+                            <span className="font-mono text-sm text-white">
                               Reg Fee: {record.membership_fee.or_number}
                             </span>
-                          ) : null}
+                          ) : (
+                            <span className="font-mono text-sm text-muted-foreground">
+                              N/A
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -753,7 +754,7 @@ export default function AdminMemberships() {
                                       id: record.id,
                                       paymentDetails: {
                                         payment_type: regPaymentMode,
-                                        transaction_id: regPaymentMode === 'gcash' ? txId : undefined,
+                                        transaction_id: regPaymentMode === 'gcash' ? txId : null,
                                         or_number: `OR-${Date.now()}`,
                                         payment_amount: 500
                                       }
@@ -827,7 +828,7 @@ export default function AdminMemberships() {
                                   <RefreshCw className="size-4" /> Renew Contract
                                 </DropdownMenuItem>
                               </DialogTrigger>
-                              <DialogContent className="matte-surface border-white/10 sm:max-w-[425px]">
+                              <DialogContent className="matte-surface border-white/10 sm:max-w-[600px]">
                                 <DialogHeader>
                                   <DialogTitle>Renew Contract</DialogTitle>
                                   <DialogDescription>
@@ -842,12 +843,14 @@ export default function AdminMemberships() {
                                   
                                   if (renewPlan === 'student_1_month') {
                                     amount = 480;
-                                  } else if (renewPlan === 'trainer_15_days') {
-                                    amount = 850;
-                                    months = 0;
-                                    days = 15;
-                                  } else if (renewPlan === 'trainer_1_month') {
-                                    amount = 1500;
+                                  }
+                                  
+                                  if (hasTrainer) {
+                                    if (trainerPlan === 'trainer_15_days') {
+                                      amount += 850;
+                                    } else if (trainerPlan === 'trainer_1_month') {
+                                      amount += 1500;
+                                    }
                                   }
                                   
                                   const txInput = document.getElementById(`renew-tx-${record.id}`) as HTMLInputElement;
@@ -876,7 +879,9 @@ export default function AdminMemberships() {
                                     or_number: `OR-${Date.now()}`,
                                     transaction_id: renewPaymentMode === 'gcash' ? txId : undefined,
                                     contract_amount: amount,
-                                    payment_amount: amount
+                                    payment_amount: amount,
+                                    trainer_id: hasTrainer && selectedTrainer ? Number(selectedTrainer) : null,
+                                    trainer_package: hasTrainer ? trainerPlan : null,
                                   }, {
                                     onSuccess: () => {
                                       setOpenRenewDialogId(null);
@@ -884,23 +889,83 @@ export default function AdminMemberships() {
                                   });
                                 }}>
                                   <div className="grid gap-4 py-4">
-                                    <div className="grid gap-2">
-                                      <Label>Member</Label>
-                                      <Input value={record.full_name || record.firstname} disabled className="bg-white/5 border-white/10 text-muted-foreground" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="grid gap-2">
+                                        <Label>Member</Label>
+                                        <Input value={record.full_name || record.firstname} disabled className="bg-white/5 border-white/10 text-muted-foreground" />
+                                      </div>
+                                      <div className="grid gap-2">
+                                        <Label htmlFor={`plan-${record.id}`}>New Contract Plan</Label>
+                                        <Select value={renewPlan} onValueChange={setRenewPlan}>
+                                          <SelectTrigger className="bg-white/5 border-white/10">
+                                            <SelectValue placeholder="Select contract duration" />
+                                          </SelectTrigger>
+                                          <SelectContent className="matte-surface border-white/10">
+                                            <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
+                                            <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </div>
-                                    <div className="grid gap-2">
-                                      <Label htmlFor={`plan-${record.id}`}>New Contract Plan</Label>
-                                      <Select value={renewPlan} onValueChange={setRenewPlan}>
-                                        <SelectTrigger className="bg-white/5 border-white/10">
-                                          <SelectValue placeholder="Select contract duration" />
-                                        </SelectTrigger>
-                                        <SelectContent className="matte-surface border-white/10">
-                                          <SelectItem value="regular_1_month">Regular Member (₱550/mo)</SelectItem>
-                                          <SelectItem value="student_1_month">Student Member (₱480/mo)</SelectItem>
-                                          <SelectItem value="trainer_15_days">Trainer Package (₱850/15 days)</SelectItem>
-                                          <SelectItem value="trainer_1_month">Trainer Package (₱1,500/1 month)</SelectItem>
-                                        </SelectContent>
-                                      </Select>
+
+                                    <div 
+                                      className={cn(
+                                        "flex flex-col gap-3 p-4 rounded-xl border transition-colors duration-200",
+                                        hasTrainer 
+                                          ? "border-emerald-500/50 bg-emerald-500/5" 
+                                          : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                                      )}
+                                    >
+                                      <label 
+                                        htmlFor={`has-trainer-${record.id}`} 
+                                        className="flex items-center space-x-3 cursor-pointer select-none"
+                                      >
+                                        <Checkbox 
+                                          id={`has-trainer-${record.id}`} 
+                                          checked={hasTrainer} 
+                                          onCheckedChange={(checked) => setHasTrainer(checked as boolean)}
+                                          className={cn(
+                                            "border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-black data-[state=checked]:border-emerald-500"
+                                          )}
+                                        />
+                                        <div className="flex flex-col">
+                                          <span className="text-sm font-semibold leading-none">Add Trainer Package</span>
+                                          <span className="text-xs text-muted-foreground mt-1">Get personalized 1-on-1 coaching</span>
+                                        </div>
+                                      </label>
+                                      
+                                      {hasTrainer && (
+                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 pt-3 border-t border-emerald-500/20 mt-1">
+                                          <div className="grid gap-2">
+                                            <Label htmlFor={`trainerPlan-${record.id}`} className="text-xs text-emerald-500/80 font-medium">Select Trainer Package</Label>
+                                            <Select value={trainerPlan} onValueChange={setTrainerPlan}>
+                                              <SelectTrigger className="bg-black/20 border-emerald-500/30 h-10 hover:border-emerald-500/50 focus:ring-emerald-500/50">
+                                                <SelectValue placeholder="Select trainer package" />
+                                              </SelectTrigger>
+                                              <SelectContent className="matte-surface border-emerald-500/20">
+                                                <SelectItem value="trainer_15_days" className="focus:bg-emerald-500/10 focus:text-emerald-500">15 Days Package (₱850)</SelectItem>
+                                                <SelectItem value="trainer_1_month" className="focus:bg-emerald-500/10 focus:text-emerald-500">1 Month Package (₱1,500)</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+
+                                          <div className="grid gap-2">
+                                            <Label htmlFor={`trainerId-${record.id}`} className="text-xs text-emerald-500/80 font-medium">Select Assigned Trainer</Label>
+                                            <Select value={selectedTrainer} onValueChange={setSelectedTrainer}>
+                                              <SelectTrigger className="bg-black/20 border-emerald-500/30 h-10 hover:border-emerald-500/50 focus:ring-emerald-500/50">
+                                                <SelectValue placeholder="Select trainer" />
+                                              </SelectTrigger>
+                                              <SelectContent className="matte-surface border-emerald-500/20">
+                                                {trainers.map((t: any) => (
+                                                  <SelectItem key={t.id} value={t.id.toString()} className="focus:bg-emerald-500/10 focus:text-emerald-500">
+                                                    {t.firstname} {t.lastname}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
 
 
@@ -925,15 +990,22 @@ export default function AdminMemberships() {
                                       </div>
                                     ) : (
                                       <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-top-1 mt-2">
-                                        <Checkbox id={`renew-cash-${record.id}`} className="border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black" required />
+                                        <Checkbox id={`renew-cash-${record.id}`} className="border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-black data-[state=checked]:border-emerald-500" required />
                                         <Label htmlFor={`renew-cash-${record.id}`} className="text-xs font-medium leading-tight cursor-pointer">
                                           Did you receive the exact payment in cash?
                                         </Label>
                                       </div>
                                     )}
+
+                                    <div className="flex items-center justify-between p-4 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                      <span className="font-semibold text-emerald-500/80">Total Amount to Pay:</span>
+                                      <span className="text-xl font-bold text-emerald-400">
+                                        ₱{(renewPlan === 'student_1_month' ? 480 : 550) + (hasTrainer ? (trainerPlan === 'trainer_15_days' ? 850 : 1500) : 0)}
+                                      </span>
+                                    </div>
                                   </div>
                                   <DialogFooter>
-                                    <Button type="submit" className="rounded-xl w-full" disabled={renewMutation.isPending}>
+                                    <Button type="submit" className="rounded-xl w-full bg-emerald-500 hover:bg-emerald-600 text-black font-semibold" disabled={renewMutation.isPending}>
                                       {renewMutation.isPending ? 'Processing...' : 'Process Renewal'}
                                     </Button>
                                   </DialogFooter>

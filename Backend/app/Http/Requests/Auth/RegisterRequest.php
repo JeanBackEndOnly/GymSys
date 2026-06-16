@@ -19,7 +19,7 @@ class RegisterRequest extends FormRequest
             'firstname'  => ['required', 'string', 'max:255'],
             'lastname'   => ['required', 'string', 'max:255'],
             'contact'    => ['nullable', 'string', 'max:255'],
-            // 'qr_code'    => ['nullable', 'string'],
+            'qr_code'    => ['nullable', 'string'],
             'sex'        => ['nullable', 'string', 'in:male,female'],
             'email'      => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'username'      => ['required', 'string', 'max:255', 'unique:users,username'],

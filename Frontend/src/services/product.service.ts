@@ -1,5 +1,11 @@
 import api from '../lib/api';
 import { Product } from '@/types/models';
+import { useAuthStore } from '../store/useAuthStore';
+
+const getPrefix = () => {
+  const role = useAuthStore.getState().user?.role;
+  return role === 'cashier' ? 'cashier' : 'admin';
+};
 
 // Product sold item (from product_sold table)
 export interface ProductSoldItem {
@@ -104,7 +110,7 @@ export const productService = {
 
   async getPaychecks(): Promise<Paycheck[]> {
     try {
-      const response = await api.get('admin/products-paycheck');
+      const response = await api.get(`${getPrefix()}/products-paycheck`);
       const data = response.data?.data || response.data || [];
       return data;
     } catch (error: any) {
@@ -114,21 +120,21 @@ export const productService = {
   },
 
   async submitPaycheck(payload: SubmitPaycheckPayload): Promise<Paycheck> {
-    const response = await api.post('admin/products-paycheck', payload);
+    const response = await api.post(`${getPrefix()}/products-paycheck`, payload);
     return response.data?.data || response.data;
   },
 
   async getPaycheckById(id: number): Promise<Paycheck> {
-    const response = await api.get(`admin/products-paycheck/${id}`);
+    const response = await api.get(`${getPrefix()}/products-paycheck/${id}`);
     return response.data?.data || response.data;
   },
 
   async updatePaycheck(id: number, data: UpdatePaycheckPayload): Promise<Paycheck> {
-    const response = await api.put(`admin/products-paycheck/${id}`, data);
+    const response = await api.put(`${getPrefix()}/products-paycheck/${id}`, data);
     return response.data?.data || response.data;
   },
 
   async deletePaycheck(id: number): Promise<void> {
-    await api.delete(`admin/products-paycheck/${id}`);
+    await api.delete(`${getPrefix()}/products-paycheck/${id}`);
   }
 };

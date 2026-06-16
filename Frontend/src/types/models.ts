@@ -78,7 +78,7 @@ export interface Contract {
   start_date?: string | null;
   end_date?: string | null;
   status?: string | null;
-  contract_payment?: ContractPayment | null;
+  payment?: ContractPayment | null;
   user?: User | null;
   created_at: string;
   updated_at: string;
@@ -92,6 +92,8 @@ export interface ContractPayment {
   or_number?: string | null;
   transaction_id?: string | null;
   payment_status?: string | null;
+  trainer_id?: number | null;
+  trainer_package?: string | null;
   paid_at?: string | null;
   created_at: string;
   updated_at: string;

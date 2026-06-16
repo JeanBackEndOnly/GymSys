@@ -42,7 +42,7 @@ Status: Paid
 ## Lifecycle
 
 ```txt
-User Registration
+User Registration (Auto-generates unique QR code for Member role)
 → Membership Payment
 → Account Activated as Gym Member
 ```

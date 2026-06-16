@@ -7,17 +7,114 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Calendar, Clock, Banknote, User } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Clock, Banknote, User } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { reservationService, Reservation } from '@/services/reservation.service';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 export default function AdminCourtRentals() {
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Form State
+  const [fullname, setFullname] = useState('');
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [hour, setHour] = useState('07');
+  const [minute, setMinute] = useState('00');
+  const [ampm, setAmpm] = useState('AM');
+  const [duration, setDuration] = useState(1);
+  const [rateType, setRateType] = useState('day');
+  const [paymentType, setPaymentType] = useState('cash');
+  const [transactionId, setTransactionId] = useState('');
+
+  const { data: reservations = [], isLoading } = useQuery({
+    queryKey: ['reservations'],
+    queryFn: reservationService.getReservations
+  });
+
+  const createMutation = useMutation({
+    mutationFn: reservationService.createReservation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      toast.success('Court reservation created successfully!');
+      setIsOpen(false);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create reservation');
+    }
+  });
+
+  const resetForm = () => {
+    setFullname('');
+    setDate(new Date());
+    setHour('07');
+    setMinute('00');
+    setAmpm('AM');
+    setDuration(1);
+    setRateType('day');
+    setPaymentType('cash');
+    setTransactionId('');
+  };
+
+  // Compute Total
+  const rate = rateType === 'day' ? 150 : 200;
+  const totalAmount = rate * duration;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullname || !date) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    // Convert 12-hour AM/PM to 24-hour time string
+    let h24 = parseInt(hour, 10);
+    if (ampm === 'PM' && h24 !== 12) h24 += 12;
+    if (ampm === 'AM' && h24 === 12) h24 = 0;
+    const timeStart24 = `${h24.toString().padStart(2, '0')}:${minute}`;
+
+    // Compute time_end based on time_start and duration
+    const endDate = new Date();
+    endDate.setHours(h24 + duration, parseInt(minute, 10));
+    const timeEnd24 = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+
+    createMutation.mutate({
+      fullname,
+      date: format(date, 'yyyy-MM-dd'),
+      time_start: timeStart24,
+      time_end: timeEnd24,
+      payment_type: paymentType as 'cash' | 'gcash',
+      reservation_amount: totalAmount,
+      payment_amount: totalAmount,
+      transaction_id: paymentType === 'gcash' ? transactionId : undefined,
+      payment_status: 'paid', // assume paid upfront
+      reservation_status: 'active',
+    });
+  };
+
+  const filteredReservations = reservations.filter((r: Reservation) => 
+    r.fullname.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Compute stats
+  const today = new Date().toISOString().split('T')[0];
+  const todayReservations = reservations.filter((r: Reservation) => r.date === today);
+  const bookingsToday = todayReservations.length;
+  const revenueToday = todayReservations.reduce((sum: number, r: Reservation) => sum + Number(r.payment_amount), 0);
   
-  // Dummy data for UI demonstration
-  const [rentals, setRentals] = useState([
-    { id: 1, name: 'John Doe', date: '2023-11-01', time: '14:00 - 15:00', duration: 1, type: 'Day (7am-6pm)', total: 150, status: 'Completed' },
-    { id: 2, name: 'Jane Smith', date: '2023-11-02', time: '19:00 - 21:00', duration: 2, type: 'Night (6pm-10pm)', total: 400, status: 'Upcoming' },
-  ]);
+  // Hours Booked Today
+  const hoursToday = todayReservations.reduce((sum: number, r: Reservation) => {
+    const start = new Date(`1970-01-01T${r.time_start}Z`);
+    const end = new Date(`1970-01-01T${r.time_end}Z`);
+    const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return sum + diffHours;
+  }, 0);
 
   return (
     <AdminLayout>
@@ -35,50 +132,131 @@ export default function AdminCourtRentals() {
                 New Booking
               </Button>
             </DialogTrigger>
-            <DialogContent className="matte-surface border-white/10 sm:max-w-[425px]">
+            <DialogContent className="matte-surface border-white/10 sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Book Basketball Court</DialogTitle>
                 <DialogDescription>
-                  Reserve the court and process payment. (UI Only)
+                  Reserve the court and process payment.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label>Renter Name</Label>
-                  <Input placeholder="Enter full name" className="bg-white/5 border-white/10" />
+                  <Label>Renter Name <span className="text-destructive">*</span></Label>
+                  <Input value={fullname} onChange={e => setFullname(e.target.value)} placeholder="Enter full name" className="bg-white/5 border-white/10" required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label>Date</Label>
-                    <Input type="date" className="bg-white/5 border-white/10" />
+                    <Label>Date <span className="text-destructive">*</span></Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal bg-white/5 border-white/10 hover:bg-white/10 text-white",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? format(date, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 matte-surface border-white/10">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                          className="bg-background text-foreground"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="grid gap-2">
-                    <Label>Duration (Hours)</Label>
-                    <Input type="number" min="1" defaultValue="1" className="bg-white/5 border-white/10" />
+                    <Label>Start Time <span className="text-destructive">*</span></Label>
+                    <div className="flex items-center space-x-2">
+                      <Select value={hour} onValueChange={setHour}>
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="HH" />
+                        </SelectTrigger>
+                        <SelectContent className="matte-surface border-white/10 h-48">
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => {
+                            const val = h.toString().padStart(2, '0');
+                            return <SelectItem key={val} value={val}>{val}</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-muted-foreground">:</span>
+                      <Select value={minute} onValueChange={setMinute}>
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="MM" />
+                        </SelectTrigger>
+                        <SelectContent className="matte-surface border-white/10 h-32">
+                          {['00', '15', '30', '45'].map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={ampm} onValueChange={setAmpm}>
+                        <SelectTrigger className="bg-white/5 border-white/10 w-24">
+                          <SelectValue placeholder="AM/PM" />
+                        </SelectTrigger>
+                        <SelectContent className="matte-surface border-white/10">
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Duration (Hours)</Label>
+                    <Input type="number" min="1" value={duration} onChange={e => setDuration(Number(e.target.value))} className="bg-white/5 border-white/10" required />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Time Slot Type</Label>
+                    <Select value={rateType} onValueChange={setRateType}>
+                      <SelectTrigger className="bg-white/5 border-white/10">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent className="matte-surface border-white/10">
+                        <SelectItem value="day">Day Time (7am-6pm) - ₱150/hr</SelectItem>
+                        <SelectItem value="night">Night Time (6pm-10pm) - ₱200/hr</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
                 <div className="grid gap-2">
-                  <Label>Time Slot Type</Label>
-                  <Select defaultValue="day">
+                  <Label>Payment Method</Label>
+                  <Select value={paymentType} onValueChange={setPaymentType}>
                     <SelectTrigger className="bg-white/5 border-white/10">
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
                     <SelectContent className="matte-surface border-white/10">
-                      <SelectItem value="day">Day Time (7am-6pm) - ₱150/hr</SelectItem>
-                      <SelectItem value="night">Night Time (6pm-10pm) - ₱200/hr</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="gcash">GCash</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex justify-between items-center mt-2">
-                  <span className="text-sm text-muted-foreground">Total Amount:</span>
-                  <span className="text-xl font-bold text-emerald-500">₱0.00</span>
+
+                {paymentType === 'gcash' && (
+                  <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                    <Label>GCash Transaction ID <span className="text-destructive">*</span></Label>
+                    <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. 10023456789" className="bg-white/5 border-white/10" required />
+                  </div>
+                )}
+
+                <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex justify-between items-center mt-2">
+                  <span className="text-sm font-semibold text-orange-500/80">Total Amount:</span>
+                  <span className="text-xl font-bold text-orange-400">₱{totalAmount.toFixed(2)}</span>
                 </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={() => setIsOpen(false)} className="rounded-xl w-full bg-orange-500 hover:bg-orange-600 text-white">
-                  Confirm Booking
-                </Button>
-              </DialogFooter>
+                <DialogFooter className="mt-4">
+                  <Button type="submit" disabled={createMutation.isPending} className="rounded-xl w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold">
+                    {createMutation.isPending ? 'Processing...' : 'Confirm Booking'}
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -87,11 +265,11 @@ export default function AdminCourtRentals() {
           <Card className="glass border-white/5">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
-                <Calendar className="size-6" />
+                <CalendarIcon className="size-6" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Bookings Today</p>
-                <h3 className="text-2xl font-bold">3</h3>
+                <h3 className="text-2xl font-bold">{bookingsToday}</h3>
               </div>
             </CardContent>
           </Card>
@@ -102,7 +280,7 @@ export default function AdminCourtRentals() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Court Revenue Today</p>
-                <h3 className="text-2xl font-bold">₱850.00</h3>
+                <h3 className="text-2xl font-bold">₱{revenueToday.toFixed(2)}</h3>
               </div>
             </CardContent>
           </Card>
@@ -112,8 +290,8 @@ export default function AdminCourtRentals() {
                 <Clock className="size-6" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Hours Booked</p>
-                <h3 className="text-2xl font-bold">5 hrs</h3>
+                <p className="text-sm text-muted-foreground">Hours Booked Today</p>
+                <h3 className="text-2xl font-bold">{hoursToday} hrs</h3>
               </div>
             </CardContent>
           </Card>
@@ -140,34 +318,41 @@ export default function AdminCourtRentals() {
                     <TableHead className="text-muted-foreground">Renter Name</TableHead>
                     <TableHead className="text-muted-foreground">Date</TableHead>
                     <TableHead className="text-muted-foreground">Time Slot</TableHead>
-                    <TableHead className="text-muted-foreground">Rate Type</TableHead>
                     <TableHead className="text-right text-muted-foreground">Total</TableHead>
                     <TableHead className="text-right text-muted-foreground">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rentals.map((rental) => (
-                    <TableRow key={rental.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="size-4 text-muted-foreground" />
-                          <span className="font-medium">{rental.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{rental.date}</TableCell>
-                      <TableCell>
-                        <span className="text-sm font-medium">{rental.time}</span>
-                        <span className="text-xs text-muted-foreground block">({rental.duration} hrs)</span>
-                      </TableCell>
-                      <TableCell><span className="text-sm text-muted-foreground">{rental.type}</span></TableCell>
-                      <TableCell className="text-right font-medium">₱{rental.total.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
-                        <span className={`text-xs px-2 py-1 rounded-md ${rental.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
-                          {rental.status}
-                        </span>
-                      </TableCell>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading reservations...</TableCell>
                     </TableRow>
-                  ))}
+                  ) : filteredReservations.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No reservations found.</TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredReservations.map((rental: Reservation) => (
+                      <TableRow key={rental.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="size-4 text-muted-foreground" />
+                            <span className="font-medium">{rental.fullname}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{rental.date}</TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium">{rental.time_start} - {rental.time_end}</span>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">₱{Number(rental.payment_amount).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={`text-xs px-2 py-1 rounded-md ${rental.reservation_status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
+                            {rental.reservation_status.charAt(0).toUpperCase() + rental.reservation_status.slice(1)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>

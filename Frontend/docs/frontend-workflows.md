@@ -3,7 +3,7 @@
 
 ## Member Registration Flow
 
-Register
+Register (Auto-generates unique QR code for Member role)
 → Pending Approval
 → Payment
 → Verification

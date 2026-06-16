@@ -101,7 +101,7 @@ const RegisterPage = () => {
       if (profileImage) payload.append('profile', profileImage);
 
       await authService.register(payload);
-      toast.success("Registration successful! You can now log in.");
+      toast.success("Account created successfully! Please visit the front desk to complete your registration and receive your QR code.");
       navigate('/login');
     } catch (error: any) {
       if (error.response?.status === 422) {

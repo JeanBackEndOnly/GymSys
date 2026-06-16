@@ -100,7 +100,7 @@ Route::middleware(['auth:sanctum', 'cashier', 'active', 'throttle:60,1'])->group
     Route::apiResource('cashier/walkins-attendance', CashierWalkInAttendanceController::class);
 
     // Products Management 
-    Route::apiResource('cashier/products', CashierProductController::class);
+    // Route::apiResource('cashier/products', CashierProductController::class);
 
     // Products paycheck Management 
     Route::apiResource('cashier/products-paycheck', CashierProductPaycheckController::class);

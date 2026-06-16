@@ -23,7 +23,10 @@ export function QRScannerModal({ onScan, trigger }: QRScannerModalProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md border-white/10 bg-[#0a0a0a]">
+      <DialogContent 
+        className="sm:max-w-md border-white/10 bg-[#0a0a0a]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ScanLine className="size-5 text-primary" />
@@ -40,9 +43,15 @@ export function QRScannerModal({ onScan, trigger }: QRScannerModalProps) {
                   onScan(scannedValue);
                 }
               }}
-              onError={(error) => {
-                console.error(error);
-                // toast.error("Camera error or permission denied.");
+              onError={(error: any) => {
+                console.error("Camera Error:", error);
+                if (error?.name === 'NotAllowedError') {
+                  toast.error("Camera permission denied. Please allow camera access in your browser settings.");
+                } else if (error?.message?.includes('getUserMedia')) {
+                  toast.error("Camera blocked: Mobile browsers require HTTPS to use the camera. Try using localhost or a secure tunnel (like ngrok).");
+                } else {
+                  toast.error("Unable to access camera. Please check permissions.");
+                }
               }}
             />
           ) : (

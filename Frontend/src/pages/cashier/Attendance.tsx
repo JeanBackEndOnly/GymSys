@@ -34,13 +34,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { walkinService } from '@/services/walkin.service';
+import { attendanceService } from '@/services/attendance.service';
+import { userService } from '@/services/user.service';
 import { QRScannerModal } from '@/components/QRScannerModal';
 import { toast } from 'sonner';
 
 export default function CashierAttendance() {
-  const { data: walkinAttendances = [], isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  const [scanResult, setScanResult] = React.useState<{ user: any, status: string, message: string } | null>(null);
+
+  const { data: walkinAttendances = [], isLoading: isWalkinLoading } = useQuery({
     queryKey: ['walkin-attendance'],
     queryFn: () => walkinService.getWalkinAttendance()
   });
@@ -50,17 +55,117 @@ export default function CashierAttendance() {
     queryFn: () => walkinService.getWalkins()
   });
 
-  const attendanceLogs = walkinAttendances.map((att: any) => {
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => userService.getAllUsers({ per_page: 1000 })
+  });
+
+  const { data: memberAttendances = [], isLoading: isMemberLoading } = useQuery({
+    queryKey: ['member-attendance'],
+    queryFn: () => attendanceService.getAllAttendance()
+  });
+
+  const recordAttendanceMutation = useMutation({
+    mutationFn: (data: any) => attendanceService.recordAttendance(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['member-attendance'] });
+      toast.success("Attendance logged successfully!");
+    },
+    onError: (error: any) => {
+      const data = error.response?.data;
+      const errorMsg = data?.errors?.user_id?.[0] || data?.errors?.qr_code?.[0] || data?.errors?.time_in?.[0] || data?.errors?.time_out?.[0] || data?.message || "Failed to log attendance";
+      toast.error(errorMsg);
+    }
+  });
+
+  const isLoading = isWalkinLoading || isMemberLoading;
+
+  const handleScan = (result: string) => {
+    const extractBase = (qrString: string) => {
+      if (!qrString) return '';
+      return qrString.split('/').pop() || qrString;
+    };
+    
+    const scanId = extractBase(result);
+    const matchedUser = users.find((u: any) => extractBase(u.qr_code) === scanId);
+    
+    if (!matchedUser) {
+      toast.error("Invalid QR Code: Member not found.");
+      return;
+    }
+
+    let status = 'active';
+    let message = '';
+    const contract = matchedUser.contract;
+
+    if (!contract) {
+      status = 'newbie';
+      message = 'No active contract yet. Newbie member.';
+    } else if (contract.status === 'expired') {
+      status = 'expired';
+      message = `Contract expired on ${new Date(contract.end_date as string).toLocaleDateString()}.`;
+    } else if (contract.status === 'active') {
+      const isExpired = new Date(contract.end_date as string) < new Date();
+      if (isExpired) {
+        status = 'expired';
+        message = `Contract is overdue since ${new Date(contract.end_date as string).toLocaleDateString()}.`;
+      } else {
+        status = 'active';
+        message = `Contract is active until ${new Date(contract.end_date as string).toLocaleDateString()}.`;
+      }
+    } else {
+      status = 'inactive';
+      message = 'Contract is not currently active.';
+    }
+
+    setScanResult({ user: matchedUser, status, message });
+
+    const now = new Date();
+    const currentTime = now.toTimeString().split(' ')[0];
+
+    const activeSession = memberAttendances.find((att: any) => att.user_id === matchedUser.id && !att.time_out);
+
+    if (activeSession) {
+      recordAttendanceMutation.mutate({
+        user_id: matchedUser.id,
+        qr_code: scanId,
+        time_in: activeSession.time_in,
+        time_out: currentTime,
+      });
+    } else {
+      recordAttendanceMutation.mutate({
+        user_id: matchedUser.id,
+        qr_code: scanId,
+        time_in: currentTime,
+      });
+    }
+  };
+
+  const walkinLogs = walkinAttendances.map((att: any) => {
     const walkin = walkins.find((w: any) => w.id === att.walk_in_id);
     return {
-      id: att.id,
+      id: `w-${att.id}`,
       name: walkin ? `${walkin.firstname} ${walkin.lastname}` : 'Unknown Walk-in',
       type: 'Walk-in',
       timeIn: new Date(att.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      timeOut: '-', // Time out not supported in backend yet
+      timeOut: '-', 
       status: 'In Gym'
     };
   });
+
+  const memberLogs = memberAttendances.map((att: any) => {
+    const userName = att.user ? `${att.user.firstname} ${att.user.lastname}` : 'Unknown Member';
+    return {
+      id: `m-${att.id}`,
+      name: userName,
+      type: 'Member',
+      timeIn: new Date(att.created_at || att.time_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timeOut: att.time_out || '-',
+      status: 'In Gym'
+    };
+  });
+
+  const attendanceLogs = [...memberLogs, ...walkinLogs];
 
   return (
     <CashierLayout>
@@ -75,7 +180,7 @@ export default function CashierAttendance() {
               <Calendar className="size-4" />
               History
             </Button>
-            <QRScannerModal onScan={(result) => toast.success(`Scanned QR: ${result}`)} />
+            <QRScannerModal onScan={handleScan} />
           </div>
         </div>
 
@@ -231,6 +336,45 @@ export default function CashierAttendance() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!scanResult} onOpenChange={(open) => !open && setScanResult(null)}>
+        <DialogContent className="sm:max-w-md border-white/10 bg-[#0a0a0a]">
+          <DialogHeader>
+            <DialogTitle>Member Scan Result</DialogTitle>
+          </DialogHeader>
+          {scanResult && (
+            <div className="flex flex-col items-center justify-center p-6 space-y-4 text-center">
+              <Avatar className="size-24 border border-white/10 mb-2">
+                <AvatarFallback className="bg-primary/20 text-primary text-3xl">
+                  {scanResult.user.firstname.charAt(0)}{scanResult.user.lastname.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <h3 className="text-2xl font-bold text-white">{scanResult.user.firstname} {scanResult.user.lastname}</h3>
+              
+              <Badge variant="outline" className={cn(
+                "px-4 py-1 text-sm border",
+                scanResult.status === 'active' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                scanResult.status === 'expired' ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
+                "bg-orange-500/10 text-orange-500 border-orange-500/20"
+              )}>
+                {scanResult.status.toUpperCase()}
+              </Badge>
+              
+              <p className={cn(
+                "text-sm font-medium",
+                scanResult.status === 'active' ? "text-emerald-500/80" : 
+                scanResult.status === 'expired' ? "text-rose-500/80" : "text-orange-500/80"
+              )}>
+                {scanResult.message}
+              </p>
+
+              <Button onClick={() => setScanResult(null)} variant="outline" className="mt-4 w-full rounded-xl border-white/10 hover:bg-white/5">
+                Close
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </CashierLayout>
   );
 }

@@ -35,6 +35,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { QRScannerModal } from '@/components/QRScannerModal';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { userService } from '@/services/user.service';
+import { attendanceService } from '@/services/attendance.service';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from 'sonner';
 
 const revenueData = [
@@ -77,6 +81,72 @@ const stats = [
 ];
 
 export default function AdminOverview() {
+  const queryClient = useQueryClient();
+  const [scanResult, setScanResult] = React.useState<{ user: any, status: string, message: string } | null>(null);
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => userService.getAllUsers({ per_page: 1000 })
+  });
+
+  const recordAttendanceMutation = useMutation({
+    mutationFn: (data: any) => attendanceService.recordAttendance(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['member-attendance'] });
+      toast.success("Attendance logged successfully!");
+    },
+    onError: () => toast.error("Failed to log attendance")
+  });
+
+  const handleScan = (result: string) => {
+    const extractBase = (qrString: string) => {
+      if (!qrString) return '';
+      return qrString.split('/').pop() || qrString;
+    };
+    
+    const scanId = extractBase(result);
+    const matchedUser = users.find((u: any) => extractBase(u.qr_code) === scanId);
+    
+    if (!matchedUser) {
+      toast.error("Invalid QR Code: Member not found.");
+      return;
+    }
+
+    let status = 'active';
+    let message = '';
+    const contract = matchedUser.contract;
+
+    if (!contract) {
+      status = 'newbie';
+      message = 'No active contract yet. Newbie member.';
+    } else if (contract.status === 'expired') {
+      status = 'expired';
+      message = `Contract expired on ${new Date(contract.end_date as string).toLocaleDateString()}.`;
+    } else if (contract.status === 'active') {
+      const isExpired = new Date(contract.end_date as string) < new Date();
+      if (isExpired) {
+        status = 'expired';
+        message = `Contract is overdue since ${new Date(contract.end_date as string).toLocaleDateString()}.`;
+      } else {
+        status = 'active';
+        message = `Contract is active until ${new Date(contract.end_date as string).toLocaleDateString()}.`;
+      }
+    } else {
+      status = 'inactive';
+      message = 'Contract is not currently active.';
+    }
+
+    setScanResult({ user: matchedUser, status, message });
+
+    const now = new Date();
+    const time_in = now.toISOString().slice(0, 19).replace('T', ' ');
+
+    recordAttendanceMutation.mutate({
+      user_id: matchedUser.id,
+      time_in: time_in,
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -87,7 +157,7 @@ export default function AdminOverview() {
             <p className="text-muted-foreground mt-1">Welcome back. Here's what's happening today.</p>
           </div>
           <div className="flex items-center gap-3">
-            <QRScannerModal onScan={(result) => toast.success(`Scanned QR: ${result}`)} />
+            <QRScannerModal onScan={handleScan} />
             <Button className="rounded-xl gap-2 shadow-lg shadow-primary/20">
               <UserPlus className="size-4" />
               Add Member
@@ -195,6 +265,46 @@ export default function AdminOverview() {
 
         </div>
       </div>
+
+      {/* Shared Scan Result Dialog */}
+      <Dialog open={!!scanResult} onOpenChange={(open) => !open && setScanResult(null)}>
+        <DialogContent className="sm:max-w-md border-white/10 bg-[#0a0a0a]">
+          <DialogHeader>
+            <DialogTitle>Member Scan Result</DialogTitle>
+          </DialogHeader>
+          {scanResult && (
+            <div className="flex flex-col items-center justify-center p-6 space-y-4 text-center">
+              <Avatar className="size-24 border border-white/10 mb-2">
+                <AvatarFallback className="bg-primary/20 text-primary text-3xl">
+                  {scanResult.user.firstname.charAt(0)}{scanResult.user.lastname.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <h3 className="text-2xl font-bold text-white">{scanResult.user.firstname} {scanResult.user.lastname}</h3>
+              
+              <Badge variant="outline" className={cn(
+                "px-4 py-1 text-sm border",
+                scanResult.status === 'active' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                scanResult.status === 'expired' ? "bg-rose-500/10 text-rose-500 border-rose-500/20" :
+                "bg-orange-500/10 text-orange-500 border-orange-500/20"
+              )}>
+                {scanResult.status.toUpperCase()}
+              </Badge>
+              
+              <p className={cn(
+                "text-sm font-medium",
+                scanResult.status === 'active' ? "text-emerald-500/80" : 
+                scanResult.status === 'expired' ? "text-rose-500/80" : "text-orange-500/80"
+              )}>
+                {scanResult.message}
+              </p>
+
+              <Button onClick={() => setScanResult(null)} variant="outline" className="mt-4 w-full rounded-xl border-white/10 hover:bg-white/5">
+                Close
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
