@@ -70,7 +70,7 @@ class TrainerController extends Controller
             \Log::error('Trainer creation failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 0,
-                'message' => 'Failed to create trainer data. Please try again.',
+                'message' => 'Failed to create trainer data. Please try again. ' . $e->getMessage(),
             ], 500);
         }
     }
