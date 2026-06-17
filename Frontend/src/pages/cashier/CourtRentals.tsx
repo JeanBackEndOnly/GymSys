@@ -7,11 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Calendar, Clock, Banknote, User } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, Calendar, Clock, Banknote, User, Minus } from 'lucide-react';
 
 export default function CashierCourtRentals() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [duration, setDuration] = useState<number | string>(1);
+  const [paymentType, setPaymentType] = useState('cash');
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentReceived, setPaymentReceived] = useState(false);
   
   // Dummy data for UI demonstration
   const [rentals, setRentals] = useState([
@@ -54,7 +59,33 @@ export default function CashierCourtRentals() {
                   </div>
                   <div className="grid gap-2">
                     <Label>Duration (Hours)</Label>
-                    <Input type="number" min="1" defaultValue="1" className="bg-white/5 border-white/10" />
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="bg-white/5 border-white/10 hover:bg-white/10 text-white shrink-0"
+                        onClick={() => setDuration(Math.max(1, (Number(duration) || 1) - 1))}
+                      >
+                        <Minus className="size-4" />
+                      </Button>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="bg-white/5 border-white/10 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none appearance-none" 
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="bg-white/5 border-white/10 hover:bg-white/10 text-white shrink-0"
+                        onClick={() => setDuration((Number(duration) || 0) + 1)}
+                      >
+                        <Plus className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="grid gap-2">
@@ -69,6 +100,44 @@ export default function CashierCourtRentals() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div className="grid gap-2">
+                  <Label>Payment Method</Label>
+                  <Select value={paymentType} onValueChange={setPaymentType}>
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent className="matte-surface border-white/10">
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="gcash">GCash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {paymentType === 'gcash' && (
+                  <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                    <Label>GCash Transaction ID <span className="text-destructive">*</span></Label>
+                    <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. 10023456789" className="bg-white/5 border-white/10" required />
+                  </div>
+                )}
+
+                {paymentType === 'cash' && (
+                  <div className="flex items-center space-x-2 p-4 rounded-xl border border-white/10 bg-white/5 animate-in fade-in slide-in-from-top-2">
+                    <Checkbox 
+                      id="payment-received-cashier" 
+                      checked={paymentReceived} 
+                      onCheckedChange={(checked) => setPaymentReceived(checked as boolean)} 
+                      className="border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:text-white"
+                    />
+                    <label
+                      htmlFor="payment-received-cashier"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-white"
+                    >
+                      I confirm that the exact cash amount has been received.
+                    </label>
+                  </div>
+                )}
+
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex justify-between items-center mt-2">
                   <span className="text-sm text-muted-foreground">Total Amount:</span>
                   <span className="text-xl font-bold text-emerald-500">₱0.00</span>
