@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function MemberProfile() {
+  const { user } = useAuthStore();
+  
   return (
     <MemberLayout>
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
@@ -34,28 +37,28 @@ export default function MemberProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" defaultValue="Alex" className="bg-white/5 border-white/10" />
+                    <Input id="firstName" defaultValue={user?.firstname || ''} className="bg-white/5 border-white/10" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" defaultValue="Mercer" className="bg-white/5 border-white/10" />
+                    <Input id="lastName" defaultValue={user?.lastname || ''} className="bg-white/5 border-white/10" />
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-2"><Mail className="size-3" /> Email</Label>
-                    <Input id="email" type="email" defaultValue="alex.mercer@example.com" className="bg-white/5 border-white/10" />
+                    <Input id="email" type="email" defaultValue={user?.email || ''} className="bg-white/5 border-white/10" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-2"><Phone className="size-3" /> Phone Number</Label>
-                    <Input id="phone" type="tel" defaultValue="0912 345 6789" className="bg-white/5 border-white/10" />
+                    <Input id="phone" type="tel" defaultValue={user?.contact || ''} className="bg-white/5 border-white/10" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="address" className="flex items-center gap-2"><MapPin className="size-3" /> Address</Label>
-                  <Input id="address" defaultValue="123 Fitness St, Metro Manila" className="bg-white/5 border-white/10" />
+                  <Input id="address" defaultValue={user?.address || ''} className="bg-white/5 border-white/10" />
                 </div>
               </CardContent>
             </Card>
