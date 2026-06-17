@@ -7,6 +7,11 @@ export const attendanceService = {
     return response.data?.data?.data || response.data?.data || response.data || [];
   },
 
+  async getMemberAttendance(params?: Record<string, any>): Promise<Attendance[]> {
+    const response = await api.get('member/attendance', { params });
+    return response.data?.data?.data || response.data?.data || response.data || [];
+  },
+
   async getAttendanceById(id: number): Promise<Attendance> {
     const response = await api.get(`admin/attendance/${id}`);
     return response.data?.data || response.data;
