@@ -13,8 +13,10 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Dumbbell,
+  Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Eye
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,7 @@ import { contractService } from '@/services/contract.service';
 import { walkinService } from '@/services/walkin.service';
 import { productService } from '@/services/product.service';
 import { userService } from '@/services/user.service';
+import { reservationService } from '@/services/reservation.service';
 
 export default function AdminPayments() {
   const [filter, setFilter] = useState('all');
@@ -71,7 +74,8 @@ export default function AdminPayments() {
   const [transactionId, setTransactionId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const itemsPerPage = 4;
   const queryClient = useQueryClient();
 
   const approveMutation = useMutation({
@@ -98,6 +102,7 @@ export default function AdminPayments() {
   const { data: paychecks = [] } = useQuery({ queryKey: ['admin-paychecks'], queryFn: productService.getPaychecks });
   const { data: users = [] } = useQuery({ queryKey: ['admin-users'], queryFn: () => userService.getAllUsers({ role: 'member' }) });
   const { data: walkinProfiles = [] } = useQuery({ queryKey: ['admin-walkin-profiles'], queryFn: walkinService.getWalkins });
+  const { data: reservations = [] } = useQuery({ queryKey: ['admin-reservations'], queryFn: reservationService.getReservations });
 
   // Map contracts
   const contractPayments = contracts.filter((c: any) => c.payment).flatMap((c: any) => {
@@ -127,6 +132,7 @@ export default function AdminPayments() {
       payments.push({
         id: `CTR-${c.id}-M`,
         rawId: c.id,
+        rawData: c,
         or_number: c.payment?.or_number || 'N/A',
         name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
         type: baseType,
@@ -142,6 +148,7 @@ export default function AdminPayments() {
         payments.push({
           id: `CTR-${c.id}-T`,
           rawId: c.id,
+          rawData: c,
           or_number: c.payment?.or_number || 'N/A',
           name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
           type: 'Trainer Package',
@@ -158,6 +165,7 @@ export default function AdminPayments() {
         payments.push({
           id: `CTR-${c.id}-O`,
           rawId: c.id,
+          rawData: c,
           or_number: c.payment?.or_number || 'N/A',
           name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
           type: 'Other Fees',
@@ -173,6 +181,7 @@ export default function AdminPayments() {
       payments.push({
         id: `CTR-${c.id}`,
         rawId: c.id,
+        rawData: c,
         or_number: c.payment?.or_number || 'N/A',
         name: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown Member',
         type: baseType,
@@ -193,6 +202,7 @@ export default function AdminPayments() {
     return {
       id: `WLK-${w.id}`,
       rawId: w.id,
+      rawData: w,
       or_number: 'N/A',
       name: profile ? `${profile.firstname} ${profile.lastname}` : (w.walk_in_info ? `${w.walk_in_info.firstname} ${w.walk_in_info.lastname}` : 'Walk-in User'),
       type: 'Walk-in',
@@ -208,6 +218,7 @@ export default function AdminPayments() {
   const productPayments = paychecks.map((p: any) => ({
     id: `POS-${p.id}`,
     rawId: p.id,
+    rawData: p,
     or_number: p.or_number || 'N/A',
     name: p.paid_by_name || 'Walk-in Customer',
     type: 'Product',
@@ -222,6 +233,7 @@ export default function AdminPayments() {
   const regFees = users.filter((u: any) => u.membership_fee).map((u: any) => ({
     id: `REG-${u.membership_fee.id}`,
     rawId: u.membership_fee.id,
+    rawData: u,
     or_number: u.membership_fee.or_number || 'N/A',
     name: `${u.firstname} ${u.lastname}`,
     type: 'Registration',
@@ -232,8 +244,23 @@ export default function AdminPayments() {
     method: u.membership_fee.payment_type === 'gcash' ? 'GCash' : 'Cash'
   }));
 
+  // Map reservations
+  const reservationPayments = reservations.map((r: any) => ({
+    id: `RES-${r.id}`,
+    rawId: r.id,
+    rawData: r,
+    or_number: r.or_number || 'N/A',
+    name: r.fullname,
+    type: 'Court Rental',
+    rawAmount: Number(r.payment_amount || 0),
+    amount: `₱${Number(r.payment_amount || 0).toLocaleString()}`,
+    status: r.payment_status === 'paid' ? 'Completed' : 'Pending',
+    date: new Date(r.created_at),
+    method: r.payment_type === 'gcash' ? 'GCash' : 'Cash'
+  }));
+
   // Combine and sort
-  const allPayments = [...contractPayments, ...walkinPayments, ...productPayments, ...regFees].sort((a, b) => b.date.getTime() - a.date.getTime());
+  const allPayments = [...contractPayments, ...walkinPayments, ...productPayments, ...regFees, ...reservationPayments].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   // Calculate summaries for today
   const now = new Date();
@@ -265,6 +292,7 @@ export default function AdminPayments() {
   const periodWalkins = periodPayments.filter(p => p.type === 'Walk-in').reduce((sum, p) => sum + p.rawAmount, 0);
   const periodProducts = periodPayments.filter(p => p.type === 'Product').reduce((sum, p) => sum + p.rawAmount, 0);
   const periodTrainerPackages = periodPayments.filter(p => p.type === 'Trainer Package').reduce((sum, p) => sum + p.rawAmount, 0);
+  const periodCourtRentals = periodPayments.filter(p => p.type === 'Court Rental').reduce((sum, p) => sum + p.rawAmount, 0);
 
   const filteredData = allPayments.filter(p => {
     const matchesTime = isDateInPeriod(p.date, timeFilter);
@@ -273,7 +301,8 @@ export default function AdminPayments() {
       (filter === 'memberships' && (p.type === 'Membership' || p.type === 'Renewal' || p.type === 'Registration')) ||
       (filter === 'walkins' && p.type === 'Walk-in') ||
       (filter === 'products' && p.type === 'Product') ||
-      (filter === 'trainers' && p.type === 'Trainer Package');
+      (filter === 'trainers' && p.type === 'Trainer Package') ||
+      (filter === 'court_rentals' && p.type === 'Court Rental');
 
     const matchesSearch = 
       p.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -291,6 +320,7 @@ export default function AdminPayments() {
     if (type === 'Walk-in') return <Banknote className="size-3.5" />;
     if (type === 'Product') return <Package className="size-3.5" />;
     if (type === 'Trainer Package') return <Dumbbell className="size-3.5" />;
+    if (type === 'Court Rental') return <Clock className="size-3.5" />;
     if (type === 'Other Fees') return <MoreHorizontal className="size-3.5" />;
     return <Wallet className="size-3.5" />;
   };
@@ -403,7 +433,7 @@ export default function AdminPayments() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
           <Card className="glass border-white/5">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
@@ -455,6 +485,15 @@ export default function AdminPayments() {
               <h3 className="text-xl font-bold">₱{periodTrainerPackages.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             </CardContent>
           </Card>
+          <Card className="glass border-white/5">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Clock className="size-4" />
+                <span className="text-sm">Court Rentals</span>
+              </div>
+              <h3 className="text-xl font-bold">₱{periodCourtRentals.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="glass border-white/5">
@@ -466,6 +505,7 @@ export default function AdminPayments() {
                 <TabsTrigger value="walkins" className="rounded-lg px-6">Walk-ins</TabsTrigger>
                 <TabsTrigger value="products" className="rounded-lg px-6">Products</TabsTrigger>
                 <TabsTrigger value="trainers" className="rounded-lg px-6">Trainer Packages</TabsTrigger>
+                <TabsTrigger value="court_rentals" className="rounded-lg px-6">Court Rentals</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="relative w-full md:w-72">
@@ -529,6 +569,12 @@ export default function AdminPayments() {
                           <DropdownMenuContent align="end" className="matte-surface border-white/10 w-48">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator className="bg-white/5" />
+                            <DropdownMenuItem 
+                              onClick={() => setSelectedTransaction(record)} 
+                              className="cursor-pointer gap-2 hover:bg-white/5"
+                            >
+                              <Eye className="size-4 text-muted-foreground" /> View Details
+                            </DropdownMenuItem>
                             {record.status === 'Pending' && (record.type === 'Renewal' || record.type === 'Membership') && (
                               <DropdownMenuItem 
                                 onSelect={(e) => {
@@ -558,7 +604,7 @@ export default function AdminPayments() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {filteredData.length > 0 && (
               <div className="flex items-center justify-between mt-6">
                 <p className="text-sm text-muted-foreground">
                   Showing <span className="text-white font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-white font-medium">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> of <span className="text-white font-medium">{filteredData.length}</span> results
@@ -601,6 +647,128 @@ export default function AdminPayments() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!selectedTransaction} onOpenChange={(open) => !open && setSelectedTransaction(null)}>
+        <DialogContent className="matte-surface border-white/10 sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription>
+              Complete details for this payment record.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-6 py-4">
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Transaction ID</p>
+                  <p className="font-mono text-white font-medium">{selectedTransaction.id}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground mb-1">O.R. Number</p>
+                  <p className="font-mono text-emerald-500 font-medium">{selectedTransaction.or_number}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Client Name</p>
+                  <p className="font-medium text-white">{selectedTransaction.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Transaction Type</p>
+                  <div className="flex items-center gap-2 text-white">
+                    {getTypeIcon(selectedTransaction.type)}
+                    <span className="font-medium">{selectedTransaction.type}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Date & Time</p>
+                  <p className="text-white text-sm">{selectedTransaction.date.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
+                  <p className="text-white">{selectedTransaction.method}</p>
+                </div>
+                {selectedTransaction.method === 'GCash' && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">GCash Reference No.</p>
+                    <p className="font-mono text-white text-sm">
+                      {selectedTransaction.rawData?.payment?.transaction_id || 
+                       selectedTransaction.rawData?.membership_fee?.transaction_id || 
+                       selectedTransaction.rawData?.transaction_id || 
+                       'N/A'}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Status</p>
+                  <Badge variant="outline" className={cn(
+                    "h-6 text-[10px] gap-1 w-max",
+                    selectedTransaction.status === 'Completed' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                  )}>
+                    {selectedTransaction.status === 'Completed' ? <CheckCircle2 className="size-3" /> : <ArrowUpRight className="size-3" />}
+                    {selectedTransaction.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Amount</p>
+                  <p className="text-xl font-bold text-emerald-500">{selectedTransaction.amount}</p>
+                </div>
+              </div>
+
+              {/* Dynamic Sections Based on Type */}
+              {selectedTransaction.type === 'Product' && selectedTransaction.rawData.items && selectedTransaction.rawData.items.length > 0 && (
+                <div className="mt-4 border-t border-white/5 pt-4">
+                  <p className="text-sm text-muted-foreground mb-3 font-medium">Items Purchased</p>
+                  <div className="space-y-2">
+                    {selectedTransaction.rawData.items.map((item: any, i: number) => (
+                      <div key={i} className="flex justify-between items-center text-sm p-2 rounded-lg bg-white/5 border border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-white font-medium">{item.product?.name || 'Unknown Product'}</span>
+                          <span className="text-muted-foreground text-xs">{item.quantity}x @ ₱{Number(item.price_at_sale).toLocaleString()}</span>
+                        </div>
+                        <span className="text-emerald-500 font-medium">₱{(item.quantity * Number(item.price_at_sale)).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedTransaction.type === 'Court Rental' && (
+                <div className="mt-4 border-t border-white/5 pt-4">
+                  <p className="text-sm text-muted-foreground mb-3 font-medium">Reservation Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Rental Date</p>
+                      <p className="text-sm text-white">{selectedTransaction.rawData.date}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Time Block</p>
+                      <p className="text-sm text-white">
+                        {selectedTransaction.rawData.time_start} - {selectedTransaction.rawData.time_end}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(selectedTransaction.type === 'Membership' || selectedTransaction.type === 'Renewal' || selectedTransaction.type === 'Registration') && selectedTransaction.rawData.plan && (
+                <div className="mt-4 border-t border-white/5 pt-4">
+                  <p className="text-sm text-muted-foreground mb-3 font-medium">Membership Plan</p>
+                  <div className="p-3 rounded-lg bg-white/5 border border-white/5">
+                    <p className="text-sm font-medium text-white">{selectedTransaction.rawData.plan.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Duration: {selectedTransaction.rawData.plan.duration_months} Months</p>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedTransaction(null)} className="w-full rounded-xl border-white/10 hover:bg-white/5">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
