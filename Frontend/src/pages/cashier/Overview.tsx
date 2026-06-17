@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CashierLayout } from '@/components/layout/CashierLayout';
 import { cn } from '@/lib/utils';
 import { 
@@ -23,6 +23,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
 import { attendanceService } from '@/services/attendance.service';
 import { contractService } from '@/services/contract.service';
+import { productService } from '@/services/product.service';
+import { walkinService } from '@/services/walkin.service';
+import { reservationService } from '@/services/reservation.service';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,44 +41,9 @@ import {
   Area
 } from 'recharts';
 
-const revenueData = [
-  { name: 'Mon', revenue: 2000 },
-  { name: 'Tue', revenue: 1500 },
-  { name: 'Wed', revenue: 3200 },
-  { name: 'Thu', revenue: 1800 },
-  { name: 'Fri', revenue: 2100 },
-  { name: 'Sat', revenue: 4500 },
-  { name: 'Sun', revenue: 3800 },
-];
-
-const walkinsData = [
-  { time: '8am', count: 5 },
-  { time: '10am', count: 12 },
-  { time: '12pm', count: 8 },
-  { time: '2pm', count: 15 },
-  { time: '4pm', count: 22 },
-  { time: '6pm', count: 35 },
-  { time: '8pm', count: 18 },
-];
-
-const stats = [
-  { label: "Today's Revenue", value: '₱12,500', trend: '+15.2%', up: true, icon: CreditCard, color: 'text-emerald-500' },
-  { label: "Today's Walk-ins", value: '45', trend: '+5.4%', up: true, icon: Footprints, color: 'text-orange-500' },
-  { label: 'Membership Renewals', value: '12', trend: '+2.1%', up: true, icon: RefreshCw, color: 'text-blue-500' },
-  { label: 'Active Members', value: '1,150', trend: '+1.2%', up: true, icon: UserCheck, color: 'text-purple-500' },
-];
-
-const recentTransactions = [
-  { id: 'TRX-001', member: 'John Doe', type: 'Membership Renewal', amount: '₱1,500', time: '10:45 AM', status: 'Completed' },
-  { id: 'TRX-002', member: 'Walk-in User', type: 'Daily Pass', amount: '₱150', time: '10:30 AM', status: 'Completed' },
-  { id: 'TRX-003', member: 'Jane Smith', type: 'Product Purchase', amount: '₱450', time: '09:45 AM', status: 'Completed' },
-  { id: 'TRX-004', member: 'Mike Johnson', type: 'New Membership', amount: '₱2,000', time: '08:45 AM', status: 'Completed' },
-  { id: 'TRX-005', member: 'Walk-in User', type: 'Daily Pass', amount: '₱150', time: '07:45 AM', status: 'Completed' },
-];
-
 export default function CashierOverview() {
   const queryClient = useQueryClient();
-  const [scanResult, setScanResult] = React.useState<{ user: any, status: string, message: string } | null>(null);
+  const [scanResult, setScanResult] = useState<{ user: any, status: string, message: string } | null>(null);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -91,6 +59,199 @@ export default function CashierOverview() {
     queryKey: ['member-attendance'],
     queryFn: () => attendanceService.getAllAttendance()
   });
+
+  const { data: paychecks = [] } = useQuery({
+    queryKey: ['paychecks'],
+    queryFn: productService.getPaychecks
+  });
+
+  const { data: walkins = [] } = useQuery({
+    queryKey: ['walkins'],
+    queryFn: walkinService.getWalkins
+  });
+
+  const { data: reservations = [] } = useQuery({
+    queryKey: ['reservations'],
+    queryFn: reservationService.getReservations
+  });
+
+  // Calculate Metrics
+  const metrics = useMemo(() => {
+    const now = new Date();
+    const isToday = (dateStr: string | Date | undefined) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return d.toDateString() === now.toDateString();
+    };
+
+    // 1. Active Members
+    const activeMembers = users.filter((u: any) => u.status === 'active').length;
+
+    // 2. Today's Walk-ins
+    const todaysWalkins = walkins.filter((w: any) => isToday(w.created_at));
+
+    // 3. Membership Renewals (Today)
+    const todaysContracts = contracts.filter((c: any) => isToday(c.created_at));
+    const todaysRenewals = todaysContracts.filter((c: any) => c.type === 'Renewal' || c.type === 'Membership').length;
+
+    // 4. Today's Revenue
+    let todaysRev = 0;
+    
+    // Contracts Revenue
+    todaysContracts.forEach((c: any) => {
+      if (c.payment?.payment_status === 'paid' && isToday(c.payment?.paid_at || c.created_at)) {
+        todaysRev += Number(c.payment.payment_amount || 0);
+      }
+    });
+
+    // POS Sales Revenue
+    const todaysPaychecks = paychecks.filter((p: any) => p.payment_status === 'paid' && isToday(p.created_at));
+    todaysPaychecks.forEach((p: any) => { todaysRev += Number(p.total_price || 0); });
+
+    // Walkins Revenue
+    todaysWalkins.forEach((w: any) => { todaysRev += Number(w.fee_paid || 0); });
+
+    // Reservations Revenue
+    reservations.filter((r: any) => r.payment_status === 'paid' && isToday(r.created_at)).forEach((r: any) => {
+      todaysRev += Number(r.payment_amount || 0);
+    });
+
+    // Registration Fees Revenue
+    users.filter((u: any) => u.membership_fee?.payment_status === 'paid' && isToday(u.membership_fee.paid_at || u.membership_fee.created_at)).forEach((u: any) => {
+      todaysRev += Number(u.membership_fee.payment_amount || 0);
+    });
+
+    // 5. Recent Transactions (Top 10 All Time)
+    const allTransactions: any[] = [];
+    
+    contracts.forEach((c: any) => {
+      if (c.payment) {
+        allTransactions.push({
+          id: `CTR-${c.id}`,
+          member: c.user ? `${c.user.firstname} ${c.user.lastname}` : 'Unknown',
+          type: c.type || 'Membership',
+          amount: `₱${Number(c.payment.payment_amount || 0).toLocaleString()}`,
+          date: new Date(c.payment.paid_at || c.created_at),
+          status: c.payment.payment_status === 'paid' ? 'Completed' : 'Pending'
+        });
+      }
+    });
+
+    paychecks.forEach((p: any) => {
+      allTransactions.push({
+        id: `POS-${p.id}`,
+        member: p.paid_by_name || 'Walk-in Customer',
+        type: 'Product Purchase',
+        amount: `₱${Number(p.total_price || 0).toLocaleString()}`,
+        date: new Date(p.created_at),
+        status: p.payment_status === 'paid' ? 'Completed' : 'Pending'
+      });
+    });
+
+    walkins.forEach((w: any) => {
+      const profile = w.walk_in_info ? `${w.walk_in_info.firstname} ${w.walk_in_info.lastname}` : 'Walk-in User';
+      allTransactions.push({
+        id: `WLK-${w.id}`,
+        member: profile,
+        type: 'Daily Pass',
+        amount: `₱${Number(w.fee_paid || 0).toLocaleString()}`,
+        date: new Date(w.created_at),
+        status: 'Completed'
+      });
+    });
+
+    reservations.forEach((r: any) => {
+      allTransactions.push({
+        id: `RES-${r.id}`,
+        member: r.fullname,
+        type: 'Court Rental',
+        amount: `₱${Number(r.payment_amount || 0).toLocaleString()}`,
+        date: new Date(r.created_at),
+        status: r.payment_status === 'paid' ? 'Completed' : 'Pending'
+      });
+    });
+
+    // Sort descending by date
+    allTransactions.sort((a, b) => b.date.getTime() - a.date.getTime());
+    const recentTransactions = allTransactions.slice(0, 10).map(t => ({
+      ...t,
+      time: t.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }));
+
+    // 6. Charts Data (Hourly for Today)
+    const hourlyRevenue: Record<number, number> = { 6:0, 8:0, 10:0, 12:0, 14:0, 16:0, 18:0, 20:0 };
+    const hourlyWalkins: Record<number, number> = { 6:0, 8:0, 10:0, 12:0, 14:0, 16:0, 18:0, 20:0 };
+
+    const getHourBucket = (d: Date) => {
+      const hour = d.getHours();
+      if (hour < 8) return 6;
+      if (hour < 10) return 8;
+      if (hour < 12) return 10;
+      if (hour < 14) return 12;
+      if (hour < 16) return 14;
+      if (hour < 18) return 16;
+      if (hour < 20) return 18;
+      return 20;
+    };
+
+    // Process all transactions for today to put into hourlyRevenue
+    allTransactions.filter(t => isToday(t.date)).forEach(t => {
+      if (t.status === 'Completed') {
+        const bucket = getHourBucket(t.date);
+        const val = Number(t.amount.replace(/[^0-9.-]+/g,""));
+        if (hourlyRevenue[bucket] !== undefined) {
+          hourlyRevenue[bucket] += val;
+        }
+      }
+    });
+
+    todaysWalkins.forEach((w: any) => {
+      const bucket = getHourBucket(new Date(w.created_at));
+      if (hourlyWalkins[bucket] !== undefined) {
+        hourlyWalkins[bucket] += 1;
+      }
+    });
+
+    const revenueData = [
+      { name: '6am', revenue: hourlyRevenue[6] },
+      { name: '8am', revenue: hourlyRevenue[8] },
+      { name: '10am', revenue: hourlyRevenue[10] },
+      { name: '12pm', revenue: hourlyRevenue[12] },
+      { name: '2pm', revenue: hourlyRevenue[14] },
+      { name: '4pm', revenue: hourlyRevenue[16] },
+      { name: '6pm', revenue: hourlyRevenue[18] },
+      { name: '8pm', revenue: hourlyRevenue[20] },
+    ];
+
+    const walkinsData = [
+      { time: '6am', count: hourlyWalkins[6] },
+      { time: '8am', count: hourlyWalkins[8] },
+      { time: '10am', count: hourlyWalkins[10] },
+      { time: '12pm', count: hourlyWalkins[12] },
+      { time: '2pm', count: hourlyWalkins[14] },
+      { time: '4pm', count: hourlyWalkins[16] },
+      { time: '6pm', count: hourlyWalkins[18] },
+      { time: '8pm', count: hourlyWalkins[20] },
+    ];
+
+    return {
+      activeMembers,
+      todaysWalkinsCount: todaysWalkins.length,
+      todaysRenewals,
+      todaysRev,
+      recentTransactions,
+      revenueData,
+      walkinsData
+    };
+
+  }, [contracts, paychecks, walkins, users, reservations]);
+
+  const stats = [
+    { label: "Today's Revenue", value: `₱${metrics.todaysRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, trend: '+0.0%', up: true, icon: CreditCard, color: 'text-emerald-500' },
+    { label: "Today's Walk-ins", value: metrics.todaysWalkinsCount.toString(), trend: '+0.0%', up: true, icon: Footprints, color: 'text-orange-500' },
+    { label: 'Membership Renewals', value: metrics.todaysRenewals.toString(), trend: '+0.0%', up: true, icon: RefreshCw, color: 'text-blue-500' },
+    { label: 'Active Members', value: metrics.activeMembers.toLocaleString(), trend: '+0.0%', up: true, icon: UserCheck, color: 'text-purple-500' },
+  ];
 
   const recordAttendanceMutation = useMutation({
     mutationFn: (data: any) => attendanceService.recordAttendance(data),
@@ -168,6 +329,7 @@ export default function CashierOverview() {
 
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentType, setPaymentType] = useState('walkin');
+
   return (
     <CashierLayout>
       <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -262,13 +424,6 @@ export default function CashierOverview() {
                   <div className={cn("p-2.5 rounded-2xl bg-white/5", stat.color)}>
                     <stat.icon className="size-5" />
                   </div>
-                  <div className={cn(
-                    "flex items-center gap-1 text-xs font-medium",
-                    stat.up ? "text-emerald-500" : "text-destructive"
-                  )}>
-                    {stat.trend}
-                    {stat.up ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-                  </div>
                 </div>
                 <div className="mt-4">
                   <p className="text-xs md:text-sm text-muted-foreground">{stat.label}</p>
@@ -291,7 +446,7 @@ export default function CashierOverview() {
             <CardContent>
               <div className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
+                  <AreaChart data={metrics.revenueData}>
                     <defs>
                       <linearGradient id="colorRevenueCashier" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
@@ -300,8 +455,8 @@ export default function CashierOverview() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} tickFormatter={(val) => `₱${val >= 1000 ? val/1000 + 'k' : val}`} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', borderColor: '#ffffff10', borderRadius: '12px', color: '#fff' }} formatter={(val: number) => `₱${val.toLocaleString()}`} />
                     <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenueCashier)" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -318,7 +473,7 @@ export default function CashierOverview() {
             <CardContent>
               <div className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={walkinsData}>
+                  <LineChart data={metrics.walkinsData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
                     <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} />
@@ -335,11 +490,8 @@ export default function CashierOverview() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Recent Transactions</CardTitle>
-                <p className="text-sm text-muted-foreground">Latest payments processed today</p>
+                <p className="text-sm text-muted-foreground">Latest payments processed system-wide</p>
               </div>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white">
-                View All
-              </Button>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -350,25 +502,34 @@ export default function CashierOverview() {
                       <th className="px-4 py-3 font-medium">Member/Client</th>
                       <th className="px-4 py-3 font-medium">Type</th>
                       <th className="px-4 py-3 font-medium">Amount</th>
-                      <th className="px-4 py-3 font-medium">Time</th>
+                      <th className="px-4 py-3 font-medium">Date & Time</th>
                       <th className="px-4 py-3 rounded-r-lg font-medium text-right">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {recentTransactions.map((trx, index) => (
+                    {metrics.recentTransactions.length > 0 ? metrics.recentTransactions.map((trx, index) => (
                       <tr key={index} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                         <td className="px-4 py-4 font-medium text-white">{trx.id}</td>
                         <td className="px-4 py-4">{trx.member}</td>
                         <td className="px-4 py-4 text-muted-foreground">{trx.type}</td>
                         <td className="px-4 py-4 font-medium text-emerald-400">{trx.amount}</td>
-                        <td className="px-4 py-4 text-muted-foreground">{trx.time}</td>
+                        <td className="px-4 py-4 text-muted-foreground">{trx.date.toLocaleDateString()} {trx.time}</td>
                         <td className="px-4 py-4 text-right">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                          <span className={cn(
+                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+                            trx.status === 'Completed' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                          )}>
                             {trx.status}
                           </span>
                         </td>
                       </tr>
-                    ))}
+                    )) : (
+                      <tr>
+                        <td colSpan={6} className="text-center py-6 text-muted-foreground">
+                          No recent transactions found.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
