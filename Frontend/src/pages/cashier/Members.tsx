@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CashierLayout } from '@/components/layout/CashierLayout';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { userService } from '@/services/user.service';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Users, 
   Search, 
@@ -52,22 +53,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const users = [
-  { id: 1, name: 'Alex Rivera', email: 'alex@example.com', role: 'Member', status: 'Active', date: '2024-03-10' },
-  { id: 2, name: 'Mike Johnson', email: 'mike@example.com', role: 'Non-Member', status: 'Inactive', date: '2024-01-20' },
-  { id: 3, name: 'Chris Evans', email: 'chris@example.com', role: 'Member', status: 'Active', date: '2024-03-12' },
-  { id: 4, name: 'Jessica Taylor', email: 'jessica@example.com', role: 'Member', status: 'Active', date: '2024-04-01' },
-  { id: 5, name: 'David Lee', email: 'david@example.com', role: 'Non-Member', status: 'Inactive', date: '2023-11-15' },
-];
-
 export default function CashierMembers() {
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [sex, setSex] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => userService.getAllUsers({ per_page: 5000 })
+  });
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '');
@@ -137,7 +139,35 @@ export default function CashierMembers() {
     }
   };
 
-  const filteredUsers = users.filter(u => filter === 'all' || u.status.toLowerCase() === filter);
+  // Derived state calculations
+  const metrics = useMemo(() => {
+    const activeCount = users.filter((u: any) => u.status === 'active').length;
+    const adminStaffCount = users.filter((u: any) => u.role === 'admin' || u.role === 'staff').length;
+
+    return {
+      total: users.length,
+      active: activeCount,
+      adminStaff: adminStaffCount
+    };
+  }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((user: any) => {
+      const matchesFilter = filter === 'all' || user.status?.toLowerCase() === filter.toLowerCase();
+      const searchLower = searchQuery.toLowerCase();
+      const fullName = `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase();
+      const matchesSearch = fullName.includes(searchLower) || (user.email && user.email.toLowerCase().includes(searchLower));
+      
+      return matchesFilter && matchesSearch;
+    });
+  }, [users, filter, searchQuery]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  const getInitials = (first: string = '', last: string = '') => {
+    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || '?';
+  };
 
   return (
     <CashierLayout>
@@ -289,7 +319,7 @@ export default function CashierMembers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <h3 className="text-2xl font-bold">1,429</h3>
+                <h3 className="text-2xl font-bold">{metrics.total.toLocaleString()}</h3>
               </div>
             </CardContent>
           </Card>
@@ -300,7 +330,7 @@ export default function CashierMembers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active Now</p>
-                <h3 className="text-2xl font-bold">384</h3>
+                <h3 className="text-2xl font-bold">{metrics.active.toLocaleString()}</h3>
               </div>
             </CardContent>
           </Card>
@@ -311,7 +341,7 @@ export default function CashierMembers() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Admins/Staff</p>
-                <h3 className="text-2xl font-bold">12</h3>
+                <h3 className="text-2xl font-bold">{metrics.adminStaff.toLocaleString()}</h3>
               </div>
             </CardContent>
           </Card>
@@ -319,7 +349,7 @@ export default function CashierMembers() {
 
         <Card className="glass border-white/5">
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-0">
-            <Tabs defaultValue="all" onValueChange={setFilter} className="w-full md:w-auto">
+            <Tabs defaultValue="all" onValueChange={(v) => { setFilter(v); setPage(1); }} className="w-full md:w-auto">
               <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl">
                 <TabsTrigger value="all" className="rounded-lg px-6">All</TabsTrigger>
                 <TabsTrigger value="active" className="rounded-lg px-6">Active</TabsTrigger>
@@ -328,7 +358,12 @@ export default function CashierMembers() {
             </Tabs>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-10 bg-white/5 border-white/10 rounded-xl h-10" />
+              <Input 
+                placeholder="Search users..." 
+                className="pl-10 bg-white/5 border-white/10 rounded-xl h-10" 
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              />
             </div>
           </CardHeader>
           <CardContent className="pt-6">
@@ -344,92 +379,125 @@ export default function CashierMembers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-9 border border-white/10">
-                            <AvatarFallback className="bg-white/5 text-xs">{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{user.name}</span>
-                            <span className="text-xs text-muted-foreground">{user.email}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn(
-                          "h-6 text-[10px]",
-                          user.role === 'Member' ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-white/5 text-muted-foreground border-white/10"
-                        )}>
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn(
-                          "h-6 text-[10px]",
-                          user.status === 'Active' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-white/5 text-muted-foreground border-white/10"
-                        )}>
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{user.date}</TableCell>
-                      <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8 hover:bg-white/10 text-muted-foreground hover:text-white" title="View Details">
-                              <User className="size-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px] border-white/10 bg-[#0a0a0a]">
-                            <DialogHeader>
-                              <DialogTitle>User Details</DialogTitle>
-                              <DialogDescription>Read-only view of {user.name}'s profile.</DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                              <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-                                <Avatar className="size-16 border border-white/10">
-                                  <AvatarFallback className="bg-white/5 text-xl">{user.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <h3 className="text-xl font-bold text-white">{user.name}</h3>
-                                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4 mt-2">
-                                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                                  <p className="text-xs text-muted-foreground">Role</p>
-                                  <p className="font-medium text-white">{user.role}</p>
-                                </div>
-                                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                                  <p className="text-xs text-muted-foreground">Status</p>
-                                  <p className={cn("font-medium", user.status === 'Active' ? "text-emerald-500" : "text-muted-foreground")}>{user.status}</p>
-                                </div>
-                                <div className="p-3 bg-white/5 rounded-xl border border-white/10 col-span-2">
-                                  <p className="text-xs text-muted-foreground">Joined Date</p>
-                                  <p className="font-medium text-white">{user.date}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        Loading users...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : paginatedUsers.length > 0 ? (
+                    paginatedUsers.map((user: any) => (
+                      <TableRow key={user.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-9 border border-white/10">
+                              <AvatarFallback className="bg-white/5 text-xs">{getInitials(user.firstname, user.lastname)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{user.firstname} {user.lastname}</span>
+                              <span className="text-xs text-muted-foreground">{user.email}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={cn(
+                            "h-6 text-[10px] capitalize",
+                            user.role === 'Member' ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-white/5 text-muted-foreground border-white/10"
+                          )}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={cn(
+                            "h-6 text-[10px] capitalize",
+                            user.status === 'active' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-white/5 text-muted-foreground border-white/10"
+                          )}>
+                            {user.status || 'inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 hover:bg-white/10 text-muted-foreground hover:text-white" title="View Details">
+                                <User className="size-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px] border-white/10 bg-[#0a0a0a]">
+                              <DialogHeader>
+                                <DialogTitle>User Details</DialogTitle>
+                                <DialogDescription>Read-only view of {user.firstname}'s profile.</DialogDescription>
+                              </DialogHeader>
+                              <div className="grid gap-4 py-4">
+                                <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                                  <Avatar className="size-16 border border-white/10">
+                                    <AvatarFallback className="bg-white/5 text-xl">{getInitials(user.firstname, user.lastname)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <h3 className="text-xl font-bold text-white">{user.firstname} {user.lastname}</h3>
+                                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                    <p className="text-xs text-muted-foreground">Role</p>
+                                    <p className="font-medium text-white capitalize">{user.role}</p>
+                                  </div>
+                                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                    <p className="text-xs text-muted-foreground">Status</p>
+                                    <p className={cn("font-medium capitalize", user.status === 'active' ? "text-emerald-500" : "text-muted-foreground")}>{user.status || 'inactive'}</p>
+                                  </div>
+                                  <div className="p-3 bg-white/5 rounded-xl border border-white/10 col-span-2">
+                                    <p className="text-xs text-muted-foreground">Joined Date</p>
+                                    <p className="font-medium text-white">{new Date(user.created_at).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                        No users found matching your search or filter.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
+            
             <div className="flex items-center justify-between mt-6">
-              <p className="text-xs text-muted-foreground">Showing 5 of 1,429 users</p>
+              <p className="text-xs text-muted-foreground">
+                Showing {Math.min(filteredUsers.length, (page - 1) * itemsPerPage + 1)} to {Math.min(filteredUsers.length, page * itemsPerPage)} of {filteredUsers.length} users
+              </p>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="bg-white/5 border-white/10 rounded-lg h-8 px-4" disabled>Previous</Button>
-                <Button variant="outline" size="sm" className="bg-white/5 border-white/10 rounded-lg h-8 px-4">Next</Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-white/5 border-white/10 rounded-lg h-8 px-4" 
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-white/5 border-white/10 rounded-lg h-8 px-4"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
               </div>
             </div>
+
           </CardContent>
         </Card>
       </div>
     </CashierLayout>
   );
 }
-
