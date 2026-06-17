@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Calendar as CalendarIcon, Clock, Banknote, User } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, Calendar as CalendarIcon, Clock, Banknote, User, Minus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reservationService, Reservation } from '@/services/reservation.service';
 import { toast } from 'sonner';
@@ -24,13 +25,15 @@ export default function AdminCourtRentals() {
   // Form State
   const [fullname, setFullname] = useState('');
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [hour, setHour] = useState('07');
   const [minute, setMinute] = useState('00');
   const [ampm, setAmpm] = useState('AM');
-  const [duration, setDuration] = useState(1);
+  const [duration, setDuration] = useState<number | string>(1);
   const [rateType, setRateType] = useState('day');
   const [paymentType, setPaymentType] = useState('cash');
   const [transactionId, setTransactionId] = useState('');
+  const [paymentReceived, setPaymentReceived] = useState(false);
 
   const { data: reservations = [], isLoading } = useQuery({
     queryKey: ['reservations'],
@@ -60,16 +63,22 @@ export default function AdminCourtRentals() {
     setRateType('day');
     setPaymentType('cash');
     setTransactionId('');
+    setPaymentReceived(false);
   };
 
   // Compute Total
   const rate = rateType === 'day' ? 150 : 200;
-  const totalAmount = rate * duration;
+  const totalAmount = rate * (Number(duration) || 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullname || !date) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (paymentType === 'cash' && !paymentReceived) {
+      toast.error('Please confirm that the cash payment has been received.');
       return;
     }
     
@@ -80,8 +89,9 @@ export default function AdminCourtRentals() {
     const timeStart24 = `${h24.toString().padStart(2, '0')}:${minute}`;
 
     // Compute time_end based on time_start and duration
+    const durationHours = Number(duration) || 1;
     const endDate = new Date();
-    endDate.setHours(h24 + duration, parseInt(minute, 10));
+    endDate.setHours(h24 + durationHours, parseInt(minute, 10));
     const timeEnd24 = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
 
     createMutation.mutate({
@@ -93,6 +103,7 @@ export default function AdminCourtRentals() {
       reservation_amount: totalAmount,
       payment_amount: totalAmount,
       transaction_id: paymentType === 'gcash' ? transactionId : undefined,
+      or_number: paymentType === 'cash' ? `OR-${Date.now()}` : undefined,
       payment_status: 'paid', // assume paid upfront
       reservation_status: 'active',
     });
@@ -132,7 +143,7 @@ export default function AdminCourtRentals() {
                 New Booking
               </Button>
             </DialogTrigger>
-            <DialogContent className="matte-surface border-white/10 sm:max-w-[500px]">
+            <DialogContent className="matte-surface border-white/10 sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Book Basketball Court</DialogTitle>
                 <DialogDescription>
@@ -147,7 +158,7 @@ export default function AdminCourtRentals() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Date <span className="text-destructive">*</span></Label>
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen} modal={true}>
                       <PopoverTrigger asChild>
                         <Button
                           variant={"outline"}
@@ -160,11 +171,21 @@ export default function AdminCourtRentals() {
                           {date ? format(date, "PPP") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 matte-surface border-white/10">
+                      <PopoverContent 
+                        className="w-auto p-0 matte-surface border-white/10 min-w-[280px] z-50"
+                        onInteractOutside={(e) => {
+                          e.preventDefault();
+                        }}
+                      >
                         <Calendar
                           mode="single"
                           selected={date}
-                          onSelect={setDate}
+                          onSelect={(newDate) => {
+                            setDate(newDate);
+                            if (newDate) {
+                              setIsCalendarOpen(false);
+                            }
+                          }}
                           className="bg-background text-foreground"
                         />
                       </PopoverContent>
@@ -174,7 +195,7 @@ export default function AdminCourtRentals() {
                     <Label>Start Time <span className="text-destructive">*</span></Label>
                     <div className="flex items-center space-x-2">
                       <Select value={hour} onValueChange={setHour}>
-                        <SelectTrigger className="bg-white/5 border-white/10">
+                        <SelectTrigger className="bg-white/5 border-white/10 w-20">
                           <SelectValue placeholder="HH" />
                         </SelectTrigger>
                         <SelectContent className="matte-surface border-white/10 h-48">
@@ -186,7 +207,7 @@ export default function AdminCourtRentals() {
                       </Select>
                       <span className="text-muted-foreground">:</span>
                       <Select value={minute} onValueChange={setMinute}>
-                        <SelectTrigger className="bg-white/5 border-white/10">
+                        <SelectTrigger className="bg-white/5 border-white/10 w-20">
                           <SelectValue placeholder="MM" />
                         </SelectTrigger>
                         <SelectContent className="matte-surface border-white/10 h-32">
@@ -210,7 +231,34 @@ export default function AdminCourtRentals() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Duration (Hours)</Label>
-                    <Input type="number" min="1" value={duration} onChange={e => setDuration(Number(e.target.value))} className="bg-white/5 border-white/10" required />
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="bg-white/5 border-white/10 hover:bg-white/10 text-white shrink-0"
+                        onClick={() => setDuration(Math.max(1, (Number(duration) || 1) - 1))}
+                      >
+                        <Minus className="size-4" />
+                      </Button>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        value={duration} 
+                        onChange={e => setDuration(e.target.value === '' ? '' : Number(e.target.value))} 
+                        className="bg-white/5 border-white/10 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none appearance-none" 
+                        required 
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="bg-white/5 border-white/10 hover:bg-white/10 text-white shrink-0"
+                        onClick={() => setDuration((Number(duration) || 0) + 1)}
+                      >
+                        <Plus className="size-4" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label>Time Slot Type</Label>
@@ -243,6 +291,23 @@ export default function AdminCourtRentals() {
                   <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
                     <Label>GCash Transaction ID <span className="text-destructive">*</span></Label>
                     <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. 10023456789" className="bg-white/5 border-white/10" required />
+                  </div>
+                )}
+
+                {paymentType === 'cash' && (
+                  <div className="flex items-center space-x-2 p-4 rounded-xl border border-white/10 bg-white/5 animate-in fade-in slide-in-from-top-2">
+                    <Checkbox 
+                      id="payment-received" 
+                      checked={paymentReceived} 
+                      onCheckedChange={(checked) => setPaymentReceived(checked as boolean)} 
+                      className="border-white/20 data-[state=checked]:bg-orange-500 data-[state=checked]:text-white"
+                    />
+                    <label
+                      htmlFor="payment-received"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-white"
+                    >
+                      I confirm that the exact cash amount has been received.
+                    </label>
                   </div>
                 )}
 
