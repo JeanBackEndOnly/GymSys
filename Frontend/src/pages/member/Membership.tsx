@@ -53,7 +53,9 @@ export default function MemberContract() {
                 </div>
                 
                 <div className="space-y-1 mb-8">
-                  <div className="text-4xl font-bold text-white tracking-tight">{user?.contract?.contract_type || 'Monthly Plan'}</div>
+                  <div className="text-4xl font-bold text-white tracking-tight capitalize">
+                    {user?.contract?.contract_type ? user.contract.contract_type.replace(/_/g, ' ') : 'Monthly Plan'}
+                  </div>
                   <p className="text-muted-foreground">Unlimited gym access and equipment use.</p>
                 </div>
 
@@ -68,14 +70,14 @@ export default function MemberContract() {
                   <p className="text-sm text-muted-foreground flex items-center gap-2 mb-1">
                     <Calendar className="size-4" /> Start Date
                   </p>
-                  <p className="text-xl font-semibold text-white">{user?.contract?.start_date || 'May 15, 2026'}</p>
+                  <p className="text-xl font-semibold text-white">{user?.contract?.start_date || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground flex items-center gap-2 mb-1">
                     <Clock className="size-4" /> Expiration Date
                   </p>
-                  <p className="text-xl font-semibold text-white">{user?.contract?.end_date || 'Jun 15, 2026'}</p>
-                  <p className="text-sm text-emerald-500 mt-1">15 days remaining</p>
+                  <p className="text-xl font-semibold text-white">{user?.contract?.end_date || 'N/A'}</p>
+                  <p className="text-sm text-emerald-500 mt-1">{Math.ceil(Number(user?.contract?.days_remaining || 0))} days remaining</p>
                 </div>
               </div>
             </div>
@@ -143,21 +145,29 @@ export default function MemberContract() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {membershipHistory.map((history) => (
-                  <TableRow key={history.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="font-medium text-white">{history.type}</TableCell>
-                    <TableCell className="text-muted-foreground">{history.startDate}</TableCell>
-                    <TableCell className="text-muted-foreground">{history.endDate}</TableCell>
+                {user?.contract ? (
+                  <TableRow key={user.contract.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                    <TableCell className="font-medium text-white capitalize">
+                      {user.contract.contract_type ? user.contract.contract_type.replace(/_/g, ' ') : 'Plan'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{user.contract.start_date}</TableCell>
+                    <TableCell className="text-muted-foreground">{user.contract.end_date}</TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="outline" className={history.status === 'Active' 
-                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
-                        : 'bg-white/5 text-muted-foreground border-white/10'
+                      <Badge variant="outline" className={user.contract.status === 'active' 
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 capitalize' 
+                        : 'bg-white/5 text-muted-foreground border-white/10 capitalize'
                       }>
-                        {history.status}
+                        {user.contract.status}
                       </Badge>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      No contract history found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
