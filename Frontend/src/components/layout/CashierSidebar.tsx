@@ -15,29 +15,30 @@ import {
   CircleDashed,
   Package,
   ChevronDown,
-  Store
+  Store,
+  Dumbbell
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { LogoutModal } from '@/components/shared/LogoutModal';
 
-const menuItems = [
+type MenuItem = {
+  icon: any;
+  label: string;
+  path?: string;
+  subItems?: { icon: any; label: string; path: string }[];
+};
+
+const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/cashier' },
   { icon: Users, label: 'Registered Users', path: '/cashier/members' },
   { icon: CreditCard, label: 'Memberships', path: '/cashier/memberships' },
   { icon: ClipboardCheck, label: 'Attendance', path: '/cashier/attendance' },
-  { icon: Wallet, label: 'Payments', path: '/cashier/payments' },
   { icon: Footprints, label: 'Walk-ins', path: '/cashier/walk-ins' },
-  { 
-    icon: Store, 
-    label: 'Commerce', 
-    subItems: [
-      { icon: Package, label: 'Products', path: '/cashier/products' },
-      { icon: ShoppingBag, label: 'POS Sales', path: '/cashier/pos' },
-    ]
-  },
+  { icon: ShoppingBag, label: 'POS Sales', path: '/cashier/pos' },
   { icon: CircleDashed, label: 'Court Rentals', path: '/cashier/court-rentals' },
+  { icon: Dumbbell, label: 'Trainers', path: '/cashier/trainers' },
 ];
 
 export function CashierSidebar({ className }: { className?: string }) {
@@ -185,9 +186,9 @@ export function CashierSidebar({ className }: { className?: string }) {
             );
           }
 
-          const isActive = location.pathname === item.path || (item.path !== '/cashier' && location.pathname.startsWith(`${item.path}/`));
+          const isActive = location.pathname === item.path || (item.path !== '/cashier' && item.path && location.pathname.startsWith(`${item.path}/`));
           return (
-            <Link key={item.path} to={item.path}>
+            <Link key={item.path || item.label} to={item.path || '#'}>
               <div
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
