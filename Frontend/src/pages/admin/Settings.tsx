@@ -59,7 +59,7 @@ export default function AdminSettings() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="one-time">One-time Membership Fee (₱)</Label>
-                  <Input id="one-time" type="number" defaultValue="500" className="bg-white/5 border-white/10" />
+                  <Input id="one-time" type="number" defaultValue="150" className="bg-white/5 border-white/10" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="renewal">Monthly Renewal Fee (₱)</Label>
