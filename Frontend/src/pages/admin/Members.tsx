@@ -179,7 +179,7 @@ export default function UserManagement() {
     formData.set('password_confirmation', finalPass);
 
     // Payment details
-    formData.append('payment_amount', '500');
+    formData.append('payment_amount', '150');
     formData.append('or_number', `OR-${Date.now()}`);
     formData.append('payment_type', regPaymentMode);
     if (regPaymentMode === 'gcash') {
@@ -204,7 +204,7 @@ export default function UserManagement() {
         const paymentDetails: any = {
           payment_type: regPaymentMode,
           or_number: `OR-${Date.now()}`,
-          payment_amount: 500,
+          payment_amount: 150,
         };
         if (regPaymentMode === 'gcash') {
           paymentDetails.transaction_id = regTransactionId;
@@ -388,7 +388,7 @@ export default function UserManagement() {
                           <ShieldCheck className="size-4 text-emerald-500" />
                           <span className="text-sm font-medium">One-Time Membership Fee</span>
                         </div>
-                        <span className="font-bold">₱500</span>
+                        <span className="font-bold">₱150</span>
                       </div>
                     </div>
 
