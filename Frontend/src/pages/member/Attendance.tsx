@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { MemberLayout } from '@/components/layout/MemberLayout';
 import { QrCode, Clock, CalendarCheck, Lock } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -12,18 +13,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-const attendanceHistory = [
-  { id: 1, date: 'Today', exactDate: 'May 30, 2026', timeIn: '08:15 AM', type: 'Check In' },
-  { id: 2, date: 'Yesterday', exactDate: 'May 29, 2026', timeIn: '06:30 PM', type: 'Check In' },
-  { id: 3, date: 'Monday', exactDate: 'May 27, 2026', timeIn: '07:00 AM', type: 'Check In' },
-  { id: 4, date: 'Sunday', exactDate: 'May 26, 2026', timeIn: '10:00 AM', type: 'Check In' },
-  { id: 5, date: 'Friday', exactDate: 'May 24, 2026', timeIn: '05:45 PM', type: 'Check In' },
-];
+import { useQuery } from '@tanstack/react-query';
+import { attendanceService } from '@/services/attendance.service';
 
 export default function MemberAttendance() {
   const { user } = useAuthStore();
   const hasActiveContract = user?.contract?.status === 'active';
+
+  // Fetch Member Attendance
+  const { data: attendanceData = [], isLoading } = useQuery({
+    queryKey: ['member-attendance'],
+    queryFn: () => attendanceService.getMemberAttendance(),
+    retry: false, // In case backend endpoint is not yet available, avoid retrying
+  });
+
+  const attendanceHistory = useMemo(() => {
+    return attendanceData.map((record: any) => {
+      const d = new Date(record.created_at);
+      return {
+        id: record.id,
+        date: d.toLocaleDateString('en-US', { weekday: 'long' }),
+        exactDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        timeIn: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        type: 'Check In'
+      };
+    });
+  }, [attendanceData]);
+
+  const totalVisits = attendanceHistory.length;
 
   return (
     <MemberLayout>
@@ -50,7 +67,12 @@ export default function MemberAttendance() {
               <>
                 <div className="bg-white p-4 rounded-2xl w-48 h-48 flex items-center justify-center mb-6 z-10 shadow-2xl shadow-primary/20 overflow-hidden">
                   {user?.qr_code ? (
-                    <img src={user.qr_code} alt="QR Code" className="w-full h-full object-contain" />
+                    <QRCodeSVG 
+                      value={user.qr_code.split('/').pop() || user.qr_code} 
+                      size={160} 
+                      level="H"
+                      includeMargin={false}
+                    />
                   ) : (
                     <QrCode className="size-full text-black" />
                   )}
@@ -89,15 +111,15 @@ export default function MemberAttendance() {
               <div className="size-12 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
                 <CalendarCheck className="size-6 text-primary" />
               </div>
-              <h3 className="text-muted-foreground text-sm mb-1">Total Visits This Month</h3>
-              <p className="text-4xl font-bold text-white">12</p>
+              <h3 className="text-muted-foreground text-sm mb-1">Total Visits Record</h3>
+              <p className="text-4xl font-bold text-white">{totalVisits}</p>
             </div>
             <div className="glass-card rounded-2xl p-6 border-white/5 flex flex-col justify-center">
               <div className="size-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
                 <Clock className="size-6 text-blue-500" />
               </div>
               <h3 className="text-muted-foreground text-sm mb-1">Average Time In</h3>
-              <p className="text-4xl font-bold text-white">06:45 <span className="text-xl text-muted-foreground">PM</span></p>
+              <p className="text-4xl font-bold text-white">N/A</p>
             </div>
           </div>
 
@@ -119,23 +141,37 @@ export default function MemberAttendance() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {attendanceHistory.map((record) => (
-                  <TableRow key={record.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="font-medium text-white">{record.date}</TableCell>
-                    <TableCell className="text-muted-foreground">{record.exactDate}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Clock className="size-3 text-muted-foreground/70" />
-                        {record.timeIn}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="outline" className="bg-white/5 border-white/10 font-normal">
-                        {record.type}
-                      </Badge>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      Loading attendance history...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : attendanceHistory.length > 0 ? (
+                  attendanceHistory.map((record: any) => (
+                    <TableRow key={record.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      <TableCell className="font-medium text-white">{record.date}</TableCell>
+                      <TableCell className="text-muted-foreground">{record.exactDate}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Clock className="size-3 text-muted-foreground/70" />
+                          {record.timeIn}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="outline" className="bg-white/5 border-white/10 font-normal">
+                          {record.type}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      No attendance history found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
