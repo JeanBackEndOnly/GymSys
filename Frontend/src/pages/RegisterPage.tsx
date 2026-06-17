@@ -93,7 +93,7 @@ const RegisterPage = () => {
       payload.append('email', formData.email);
       payload.append('password', formData.password);
       payload.append('password_confirmation', formData.password); // Required by backend
-      payload.append('payment_amount', '500'); // Set registration fee amount
+      payload.append('payment_amount', '150'); // Set registration fee amount
       payload.append('or_number', `OR-${Date.now()}`); // Auto-generate real OR number
       payload.append('payment_type', 'cash'); // Default payment type
       payload.append('contact', phone);
