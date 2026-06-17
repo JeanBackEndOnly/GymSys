@@ -78,6 +78,8 @@ export interface Contract {
   start_date?: string | null;
   end_date?: string | null;
   status?: string | null;
+  days_remaining?: number | null;
+  is_active?: boolean | null;
   payment?: ContractPayment | null;
   user?: User | null;
   created_at: string;
