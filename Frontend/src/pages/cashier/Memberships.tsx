@@ -136,7 +136,7 @@ export default function CashierMemberships() {
         payment_type: regPaymentMode,
         transaction_id: regPaymentMode === 'gcash' ? regTransactionId : null,
         or_number: `OR-${Date.now()}`,
-        payment_amount: 500
+        payment_amount: 150
       }
     });
   };
@@ -436,7 +436,7 @@ export default function CashierMemberships() {
                         <ShieldCheck className="size-4 text-emerald-500" />
                         <span className="text-sm font-medium">One-Time Membership Fee</span>
                       </div>
-                      <span className="font-bold">₱500</span>
+                      <span className="font-bold">₱150</span>
                     </div>
                   </div>
 
@@ -756,7 +756,7 @@ export default function CashierMemberships() {
                                         payment_type: regPaymentMode,
                                         transaction_id: regPaymentMode === 'gcash' ? txId : null,
                                         or_number: `OR-${Date.now()}`,
-                                        payment_amount: 500
+                                        payment_amount: 150
                                       }
                                     });
                                   }} className="grid gap-4 py-4">
@@ -766,7 +766,7 @@ export default function CashierMemberships() {
                                           <ShieldCheck className="size-4 text-emerald-500" />
                                           <span className="text-sm font-medium">One-Time Membership Fee</span>
                                         </div>
-                                        <span className="font-bold">₱500</span>
+                                        <span className="font-bold">₱150</span>
                                       </div>
                                     </div>
 
