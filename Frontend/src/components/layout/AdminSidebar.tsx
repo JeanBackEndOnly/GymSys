@@ -12,7 +12,6 @@ import {
   UserCircle,
   LogOut,
   ChevronLeft,
-  Settings,
   ShieldCheck,
   Wallet,
   Package,
@@ -247,15 +246,6 @@ export function AdminSidebar({ className }: { className?: string }) {
           )}>
             <UserCircle className="size-5" />
             {!collapsed && <span className="font-medium">My Profile</span>}
-          </div>
-        </Link>
-        <Link to="/admin/settings">
-          <div className={cn(
-            "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-white/5 hover:text-white",
-            location.pathname === '/admin/settings' && "bg-white/10 text-white"
-          )}>
-            <Settings className="size-5" />
-            {!collapsed && <span className="font-medium">Settings</span>}
           </div>
         </Link>
         <LogoutModal>
