@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: `http://${window.location.hostname}:8000/api`, // Dynamically use the host IP for local network access
+  baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000/api`,
   headers: {
     Accept: 'application/json',
   },
