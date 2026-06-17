@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   CreditCard, 
@@ -32,26 +32,71 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { MemberLayout } from '@/components/layout/MemberLayout';
-
-const recentAttendance = [
-  { id: 1, date: 'Today', timeIn: '08:15 AM', type: 'Check In' },
-  { id: 2, date: 'Yesterday', timeIn: '06:30 PM', type: 'Check In' },
-  { id: 3, date: 'May 27, 2026', timeIn: '07:00 AM', type: 'Check In' },
-];
-
-const recentPayments = [
-  { id: 1, date: 'May 01, 2026', amount: '₱1,500.00', type: 'Monthly Plan', status: 'Paid' },
-  { id: 2, date: 'Apr 01, 2026', amount: '₱1,500.00', type: 'Monthly Plan', status: 'Paid' },
-];
+import { useQuery } from '@tanstack/react-query';
+import { attendanceService } from '@/services/attendance.service';
 
 export default function MemberOverview() {
   const { user } = useAuthStore();
   
   // A user must have an active contract to access their QR code and facility
   const hasActiveContract = user?.contract?.status === 'active';
+
+  // Fetch Member Attendance
+  const { data: attendanceData = [] } = useQuery({
+    queryKey: ['member-attendance'],
+    queryFn: () => attendanceService.getMemberAttendance(),
+    retry: false, // In case backend endpoint is not yet available, avoid retrying
+  });
+
+  // Calculate top 3 recent attendance
+  const recentAttendance = useMemo(() => {
+    return attendanceData.slice(0, 3).map((record: any) => ({
+      id: record.id,
+      date: new Date(record.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      timeIn: new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      type: 'Check In',
+    }));
+  }, [attendanceData]);
+
+  // Aggregate user payments (Membership fee & Contract payment)
+  const recentPayments = useMemo(() => {
+    const payments = [];
+    
+    if (user?.contract?.payment) {
+      const p = user.contract.payment;
+      const contractTypeStr = user.contract.contract_type 
+        ? user.contract.contract_type.replace(/_/g, ' ') 
+        : 'Contract';
+      const trainerPkgStr = p.trainer_package 
+        ? ` + Trainer (${p.trainer_package.replace(/_/g, ' ')})` 
+        : '';
+
+      payments.push({
+        id: `contract-${p.id}`,
+        date: p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
+        amount: `₱${Number(p.payment_amount || 0).toFixed(2)}`,
+        type: `${contractTypeStr}${trainerPkgStr}`,
+        status: p.payment_status || 'Paid',
+      });
+    }
+
+    if (user?.membership_fee) {
+      const m = user.membership_fee;
+      payments.push({
+        id: `fee-${m.id}`,
+        date: m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
+        amount: `₱${Number(m.payment_amount || 0).toFixed(2)}`,
+        type: 'Membership Fee',
+        status: m.payment_status || 'Paid',
+      });
+    }
+    
+    return payments;
+  }, [user]);
+
+  const totalVisits = attendanceData.length;
 
   return (
     <MemberLayout>
@@ -133,21 +178,21 @@ export default function MemberOverview() {
               <div>
                 <h3 className="font-medium text-white">Contract Status</h3>
                 <p className="text-emerald-500 text-sm font-semibold capitalize">
-                  Active - {user.contract?.contract_type?.replace(/_/g, ' ') || 'Plan'}
+                  Active - {user?.contract?.contract_type?.replace(/_/g, ' ') || 'Plan'}
                 </p>
               </div>
             </div>
             <div className="relative z-10">
               <div className="text-2xl font-bold text-white tracking-tight mb-1">
-                {user.contract?.end_date ? (
+                {user?.contract?.end_date ? (
                   `${Math.ceil((new Date(user.contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Days`
                 ) : 'Active'}
               </div>
               <p className="text-sm text-muted-foreground mb-3">
-                remaining until renewal on {user.contract?.end_date ? new Date(user.contract.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                remaining until renewal on {user?.contract?.end_date ? new Date(user.contract.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
               </p>
               
-              {user.contract?.payment?.trainer_package && (
+              {user?.contract?.payment?.trainer_package && (
                 <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/10">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 capitalize px-2 py-0.5">
                     Trainer: {user.contract.payment.trainer_package.replace(/_/g, ' ')}
@@ -223,15 +268,15 @@ export default function MemberOverview() {
             </div>
             <div>
               <h3 className="font-medium text-white">Attendance Summary</h3>
-              <p className="text-blue-500 text-sm font-semibold">This Month</p>
+              <p className="text-blue-500 text-sm font-semibold">Overall Visits</p>
             </div>
           </div>
           <div className="relative z-10">
             <div className="text-3xl font-bold text-white tracking-tight mb-1">
-              12 Visits
+              {totalVisits} Visits
             </div>
             <p className="text-sm text-muted-foreground">
-              You are in the top 20% of active members!
+              {totalVisits > 0 ? "You're doing great! Keep it up!" : "No attendance recorded yet."}
             </p>
           </div>
         </div>
@@ -261,22 +306,30 @@ export default function MemberOverview() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentAttendance.map((record) => (
-                  <TableRow key={record.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="font-medium text-white">{record.date}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Clock className="size-3 text-muted-foreground/70" />
-                        {record.timeIn}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="outline" className="bg-white/5 border-white/10 font-normal">
-                        {record.type}
-                      </Badge>
+                {recentAttendance.length > 0 ? (
+                  recentAttendance.map((record: any) => (
+                    <TableRow key={record.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      <TableCell className="font-medium text-white">{record.date}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Clock className="size-3 text-muted-foreground/70" />
+                          {record.timeIn}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="outline" className="bg-white/5 border-white/10 font-normal">
+                          {record.type}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow className="border-b-0 hover:bg-transparent">
+                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      No recent attendance found.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
@@ -303,15 +356,23 @@ export default function MemberOverview() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentPayments.map((payment) => (
-                  <TableRow key={payment.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="font-medium text-white">{payment.date}</TableCell>
-                    <TableCell className="text-muted-foreground">{payment.type}</TableCell>
-                    <TableCell className="text-right text-white font-medium">
-                      {payment.amount}
+                {recentPayments.length > 0 ? (
+                  recentPayments.map((payment: any) => (
+                    <TableRow key={payment.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      <TableCell className="font-medium text-white">{payment.date}</TableCell>
+                      <TableCell className="text-muted-foreground">{payment.type}</TableCell>
+                      <TableCell className="text-right text-white font-medium">
+                        {payment.amount}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow className="border-b-0 hover:bg-transparent">
+                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      No recent payments found.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
