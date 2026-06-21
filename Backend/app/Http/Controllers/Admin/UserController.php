@@ -118,6 +118,7 @@ class UserController extends Controller
             $this->authorize('viewAny', User::class);
 
             $users = User::query()
+                ->with(['contract', 'contract.payment', 'membership_fee'])
                 ->when($request->search, function ($query) use ($request) {
                     $query->where(function ($q) use ($request) {
                         $q->where('firstname', 'like', "%{$request->search}%")
